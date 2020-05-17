@@ -20,7 +20,7 @@ import GeoJSON from 'ol/format/GeoJSON'
 proj4.defs('EPSG:3067', '+proj=utm +zone=35 +ellps=GRS80 +units=m +no_defs')
 register(proj4)
 const imageProjection = new Projection({code: 'EPSG:3067'})
-const imageExtent = [-118331.366, 6335621.167, 875567.732, 7907751.537]
+const imageExtent = [20000, 6450000, 770000, 7000000]
 
 function createMap(settings) {
   const {x, y, zoom} = settings
@@ -51,7 +51,7 @@ function createMap(settings) {
 
 function createMapLayer() {
   const attributions = ['&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>']
-  const source = new XYZ({url: '/tiles/{z}/{x}/{y}.png', attributions})
+  const source = new XYZ({url: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png', attributions})
   return new Tile({source})
 }
 
