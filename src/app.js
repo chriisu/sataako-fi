@@ -10,6 +10,11 @@ const app = express()
 app.disable('x-powered-by')
 if (process.env.NODE_ENV == 'production') {
   app.enable('trust proxy')
+  app.use((req, res, next) => {
+    if (req.header('x-forwarded-proto') !== 'https')
+      res.redirect(`https://${req.header('host')}${req.url}`)
+    else next()
+  })
 } else {
   // eslint-disable-next-line global-require
   const {bindDevAssets} = require('./dev-assets')
