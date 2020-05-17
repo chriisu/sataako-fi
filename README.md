@@ -1,50 +1,7 @@
-Sataako.fi
-==========
+# Sataako.fi fork
 
-![screenshot](https://raw.github.com/heikkipora/sataako-fi/master/work/screenshot.jpg)
+This is an experimental fork from [Sataako.fi](https://www.sataako.fi) mobile-friendly weather service for Finland made by ([heikkipora](https://github.com/heikkipora)). The original source repo is available on [Github](https://github.com/heikkipora/sataako-fi).
 
-Introduction
-------------
-I wanted to create a mobile-friendly weather service for Finland which has the simplest possible user interface (in Finnish).
+This fork aims to provide higher resolution rain images to Southern Finland and a customized mobile interface interaction.
 
-[Sataako.fi](https://www.sataako.fi) fetches weather radar images from [Finnish Meteorological Institute](http://en.ilmatieteenlaitos.fi)'s [Open Data APIs](http://en.ilmatieteenlaitos.fi/open-data-manual) and shows them as a Openlayers v5 image layer after some post-processing. The map tiles are server from <a href="https://www.mapbox.com">Mapbox</a>. The movement of rain clouds is shown as a short animation covering the last hour.
-
-[![build status](https://travis-ci.org/heikkipora/sataako-fi.svg?branch=master)](https://travis-ci.org/heikkipora/sataako-fi)
-
-Runtime environment
--------------------
-The node.js application runs in [AWS](https://aws.amazon.com) with a single ```t3.micro``` instance on ```eu-north-1``` region.
-It's deployed there with ```ansible```.
-
-It's responsible for
-
-* maintaing an up-to-date list of radar frames available from FMI
-* delivering those frames as post-processed PNG or WEBP images (depending on the browser)
-
-To be able to serve a decent amount of concurrent users without exceeding the FMI API request rate, the following steps are done:
-
-* requests to FMI API go through a task queue which limits concurrency
-* radar frame list is cached internally for one minute before a re-fetch from FMI
-* radar frame images are cached 1) locally for about one hour and 2) by an AWS Cloudfront distribution sitting in front of the Heroku app (at d2ot8aujc2hu2d.cloudfront.net) for 24 hours
-
-Radar frame post-processing
----------------------------
-FMI provides a [WMS](https://en.wikipedia.org/wiki/Web_Map_Service) compliant HTTP API for fetching a composite radar image covering all of Finland.
-To be able to use those images on top of the Mapbox map the following steps are taken:
-
-* request a PNG image in [EPSG:3067 projection](http://spatialreference.org/ref/epsg/3067/) which is native for FMI's radar images
-* decode PNG into raw 32bit pixel data
-* change a solid gray background (0xf7f7f7) to fully transparent
-* use a [mask-image](src/radar-mask.png) to change a solid orange area outside the radars' range to fully transparent
-* use an [overlay-image](src/radar-edges.png) to draw the edge of the radars' range
-* encode image as PNG and WEBP maintaining transparency
-
-Openlayers will then reproject those images on the fly to [EPSG:3857 projection](http://spatialreference.org/ref/sr-org/7483/) aka WGS84 Web Mercator which is used by the Mapbox tiles.
-
-## Contributing
-
-Pull requests are welcome. Kindly check that your code passes ESLint checks by running ```npm test``` first.
-
-## Contributors
-
-* Lauri Kangassalo ([lakka](https://github.com/lakka)) - Lightning implementation
+Work in progress.
