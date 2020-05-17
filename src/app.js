@@ -4,6 +4,7 @@ const {imageFileForTimestamp, framesList} = require('./cache')
 
 const PORT = process.env.PORT || 3000
 const PUBLIC_URL_PORT = process.env.NODE_ENV === 'production' ? '' : `:${PORT}`
+const S3_BUCKET = process.env.S3_BUCKET_NAME
 
 const app = express()
 app.disable('x-powered-by')
@@ -37,7 +38,8 @@ app.get('/frame/:timestamp', (req, res) => {
 })
 
 app.get('/frames.json', (req, res) => {
-  const publicRootUrl = `${req.protocol}://${req.hostname}${PUBLIC_URL_PORT}/frame/`
+  const publicRootUrl = `${req.protocol}://${S3_BUCKET}.s3.amazonaws.com/frame/`
+  // const publicRootUrl = `${req.protocol}://${req.hostname}${PUBLIC_URL_PORT}/frame/`
   res.set('Cache-Control', 'public, max-age=60');
   res.json(framesList(publicRootUrl))
 })
