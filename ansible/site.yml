@@ -1,6 +1,0 @@
-- hosts: sataako.fi
-  roles:
-     - os
-     - nginx
-     - nodejs
-     - app

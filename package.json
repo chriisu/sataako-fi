@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "build": "./production-build",
-    "start": "node src/app.js",
+    "start": "node build/src/app.js",
+    "dev": "node-dev src/app.js",
     "test": "eslint src --fix"
   },
   "dependencies": {
@@ -27,6 +28,7 @@
     "eslint": "6.8.0",
     "eslint-plugin-react": "7.18.2",
     "less-middleware": "3.1.0",
+    "node-dev": "4.0.0",
     "ol": "6.1.1",
     "proj4": "2.6.0",
     "react": "16.12.0",
@@ -34,7 +36,6 @@
     "uglify-js": "3.7.6"
   },
   "engines": {
-    "node": "10.16.0",
-    "npm": "6.9.0"
+    "node": "12.x"
   }
 }

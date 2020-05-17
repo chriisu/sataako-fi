@@ -1,2 +1,0 @@
-[sataakofi]
-sataako.fi ansible_user=root ansible_become=true
