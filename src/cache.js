@@ -5,8 +5,7 @@ const { fetchLightnings } = require('./fmi-lightnings')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const axios = require('axios')
-const S3 = require('aws-sdk/clients/s3')
+const { saveFileToS3, fileExistsOnS3 } = require('./s3-bucket')
 
 /* eslint-disable no-await-in-loop */
 
@@ -16,12 +15,6 @@ console.log(`Radar frames cached at ${CACHE_FOLDER}`)
 const IMAGE_CACHE = []
 const LIGHTNING_CACHE = []
 const REFRESH_ONE_MINUTE = 60 * 1000
-const BUCKET_NAME = process.env.S3_BUCKET_NAME
-
-const s3bucket = new S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-})
 
 refreshCache()
 
@@ -67,65 +60,47 @@ async function refreshCache() {
 
 async function syncImages(imageUrls) {
   for (const { url, timestamp } of imageUrls) {
-    const fileName = path.join(CACHE_FOLDER, timestamp)
     try {
-      const response = await axios.head(
-        `http://sade.s3.amazonaws.com/frame/${timestamp}`
-      )
-      console.log(`${timestamp.slice(0, 16)}: ${response.status}`)
+      const response = await fileExistsOnS3(`frame/${timestamp}.png`)
+      console.log(`${timestamp.slice(0, 16)}: ok`)
     } catch (error) {
-      const httpStatus = _.get(error, 'response.status')
-      console.log(`${timestamp.slice(0, 16)}: ${httpStatus}`)
-
+      const httpStatus = _.get(error, 'statusCode')
+      console.log(
+        `${timestamp.slice(0, 16)}: ${httpStatus ? httpStatus : error}`
+      )
       if (httpStatus >= 400 && httpStatus < 500) {
-        await fetchAndCacheImage(url, fileName, timestamp)
+        await fetchAndCacheImage(url, timestamp)
       }
     }
     IMAGE_CACHE.push({ timestamp, url })
   }
 }
 
-async function fetchAndCacheImage(url, fileName, timestamp) {
+async function fetchAndCacheImage(url, timestamp) {
+  const filePath = path.join(CACHE_FOLDER, timestamp)
   try {
-    await fetchPostProcessedRadarFrame(url, fileName)
+    await fetchPostProcessedRadarFrame(url, filePath)
     Promise.all([
-      await syncToS3(`${fileName}.png`, timestamp),
-      await syncToS3(`${fileName}.webp`, timestamp),
+      await syncToS3(`${filePath}.png`, `frame/${timestamp}.png`),
+      await syncToS3(`${filePath}.webp`, `frame/${timestamp}.webp`),
     ])
   } catch (err) {
     console.error(`Failed to fetch radar image from ${url}: ${err.message}`)
   }
 }
 
-async function syncToS3(filePath, timestamp) {
-  await uploadToS3(filePath, timestamp)
+async function syncToS3(filePath, targetPath) {
+  try {
+    await saveFileToS3(filePath, targetPath)
+  } catch (err) {
+    console.error(`Failed to save frame to S3 to ${targetPath}: ${err.message}`)
+  }
   try {
     if (fs.existsSync(filePath)) {
-      await fs.promises.unlink(filePath)
+      fs.promises.unlink(filePath)
     }
   } catch (err) {
     console.error(`Temp file removing error: ${err.message}`)
-  }
-}
-
-async function uploadToS3(file, timestamp) {
-  try {
-    const fileContent = fs.readFileSync(file)
-    const params = {
-      Bucket: BUCKET_NAME,
-      Key: `frame/${timestamp}`,
-      Body: fileContent,
-    }
-    const data = await s3bucket.upload(params, (err, data) => {
-      if (err) {
-        throw err
-      }
-      console.log(`Frame uploaded to s3: ${data.Location}`)
-      return data
-    })
-    return data
-  } catch (err) {
-    console.error(`Failed to save frame to S3 for ${timestamp}: ${err.message}`)
   }
 }
 
@@ -139,18 +114,6 @@ async function pruneCache(validImageUrls) {
   //   await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}.png`))
   //   await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}.webp`))
   // }
-}
-
-function imageFileForTimestamp(timestamp) {
-  const image = _.find(IMAGE_CACHE, { timestamp })
-  if (!image) {
-    return null
-  }
-
-  return {
-    png: path.join(CACHE_FOLDER, `${timestamp}.png`),
-    webp: path.join(CACHE_FOLDER, `${timestamp}.webp`),
-  }
 }
 
 function framesList(publicFramesRootUrl) {
@@ -178,6 +141,5 @@ function coordinatesForLightnings(timestamp) {
 }
 
 module.exports = {
-  imageFileForTimestamp,
   framesList,
 }
