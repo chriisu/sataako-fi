@@ -23,8 +23,11 @@ async function processImage(input, targetFilename) {
   applyAlphaChannel(data)
 
   const {width, height, channels} = info
-  const pipeline = sharp(data, {raw: {width, height, channels}})
-    .resize({height: height / 3, kernel: 'nearest'})
+  const pipeline = sharp(data, {
+    sequentialRead: true,
+    raw: { width, height, channels },
+  })
+    // .resize({height: height / 2, kernel: 'nearest'})
     // .composite([{input: `${__dirname}/radar-edges.png`}])
   const pngFile = `${targetFilename}.png`
   const webpFile = `${targetFilename}.webp`
