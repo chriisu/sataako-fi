@@ -57,10 +57,14 @@ const SataakoApp = () => {
     return frames.map((frame) => <img key={frame.image} src={frame.image} />)
   }
 
-  async function reloadFramesList() {
+  async function reloadFramesList(options = {}) {
+    const { ignoreCache } = options
     console.log('reloadFramesList')
     setLoading(true)
-    const response = await axios.get('/frames.json')
+    const reqConfig = ignoreCache
+      ? { headers: { 'Cache-Control': 'no-cache' } }
+      : {}
+    const response = await axios.get('/frames.json', reqConfig)
     console.log(response.status)
     response.status === 200 && setFrames(response.data)
   }

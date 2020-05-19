@@ -5,7 +5,7 @@ const InfoPanel = ({ loading, refresh }) => {
   const [pseudoLoad, setPseudoLoad] = useState(false)
 
   const refreshButton = () => {
-    refresh()
+    refresh({ ignoreCache: true })
     setPseudoLoad(true)
     setTimeout(() => {
       setPseudoLoad(false)
@@ -15,7 +15,7 @@ const InfoPanel = ({ loading, refresh }) => {
   const collapsedInfoPanel = () => (
     <div id="side-info-panel-open">
       <img
-        className={`panel-btn ${loading || (pseudoLoad && 'active')}`}
+        className={`panel-btn ${(loading || pseudoLoad) && 'active'}`}
         id="sync-icon"
         src="/img/sync.svg"
         onClick={refreshButton}
