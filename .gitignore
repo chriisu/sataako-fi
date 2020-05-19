@@ -8,3 +8,5 @@ public/client.js
 .vscode
 src/lightnings.xml
 .env
+.cache
+dist

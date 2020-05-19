@@ -1,91 +1,109 @@
 import axios from 'axios'
-import {format, parseISO} from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import InfoPanel from './info-panel'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
-import {createMap, panTo, showRadarFrame} from './map'
+import { createMap, panTo, showRadarFrame } from './map'
+import localforage from 'localforage'
+import Slider from 'react-rangeslider'
 
 const FRAME_DELAY_MS = 500
 const FRAME_LOOP_DELAY_MS = 5000
-const FRAME_LIST_RELOAD_MS = 2 * 60 * 1000
 
-class SataakoApp extends React.Component {
-  constructor() {
-    super()
-    this.state = {
-      currentFrame: null,
-      currentFrameIndex: 0,
-      frames: [],
-      mapSettings: {
-        x: Number(localStorage.getItem('sataako-fi-x')) || 2776307.5078,
-        y: Number(localStorage.getItem('sataako-fi-y')) || 8438349.32742,
-        zoom: Number(localStorage.getItem('sataako-fi-zoom')) || 7
-      }
+let map = null
+
+const SataakoApp = () => {
+  const [frameIndex, setFrameIndex] = useState(0)
+  const [frames, setFrames] = useState([])
+  const [mapSettings, setMapSettings] = useState({
+    x: 2776307.5078,
+    y: 8438349.32742,
+    zoom: 7,
+  })
+
+  useEffect(() => {
+    reloadFramesList()
+    initMap()
+  }, [])
+
+  async function initMap() {
+    try {
+      const mapSettings = await localforage.getItem('mapSettings')
+      setMapSettings(mapSettings)
+    } catch (err) {
+      console.log(err)
     }
-  }
-
-  componentDidMount() {
-    this.map = createMap(this.state.mapSettings)
-    this.map.on('moveend', this.onMapMove.bind(this, null))
-
-    this.reloadFramesList()
-    this.animateRadar()
+    map = createMap(mapSettings)
+    map.on('moveend', onMapMove)
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(this.onLocation.bind(this))
+      navigator.geolocation.getCurrentPosition(onLocation)
     }
   }
 
-  render() {
-    const radarFrameTimestamp = this.state.currentFrame ? format(parseISO(this.state.currentFrame.timestamp), 'd.M. HH:mm') : ''
+  function renderFrameImages() {
+    return frames.map((frame) => <img key={frame.image} src={frame.image} />)
+  }
 
-    return (
-      <div>
-        <div id="map"></div>
-        <div id="preload-frames">{this.renderFrameImages()}</div>
-        <div className="radar-timestamp"><span>{radarFrameTimestamp}</span></div>
-        <InfoPanel/>
+  async function reloadFramesList() {
+    const response = await axios.get('/frames.json')
+    console.log(response.status)
+    response.status === 200 && setFrames(response.data)
+
+  }
+
+  function onMapMove() {
+    const [x, y] = map.getView().getCenter()
+    const zoom = map.getView().getZoom()
+    try {
+      localforage.setItem('mapSettings', { x, y, zoom })
+      console.log('mapSettings localforage', { x, y, zoom })
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  function onLocation(geolocationResponse) {
+    panTo(map, [
+      geolocationResponse.coords.longitude,
+      geolocationResponse.coords.latitude,
+    ])
+  }
+
+  const radarFrameTimestamp = frames[frameIndex]
+    ? format(parseISO(frames[frameIndex].timestamp), 'd.M. HH:mm')
+    : ''
+
+  function setFrameVisible(newFrameIndex) {
+    setFrameIndex(newFrameIndex)
+    showRadarFrame(map, frames[newFrameIndex])
+  }
+
+  const sliderTooltip = (sliderIndex) => {
+    const stringi = format(parseISO(frames[sliderIndex].timestamp), 'HH.mm')
+    return stringi
+  }
+
+  return (
+    <>
+      <div id="control">
+        {frames.length && (
+          <Slider
+            value={frameIndex}
+            max={frames.length - 1 || 0}
+            orientation="horizontal"
+            onChange={(sliderIndex, map) => setFrameVisible(sliderIndex, map)}
+            format={sliderTooltip}
+          />
+        )}
       </div>
-    )
-  }
-
-  renderFrameImages() {
-    return this.state.frames.map(frame => <img key={frame.image} src={frame.image}/>)
-  }
-
-  reloadFramesList() {
-    axios.get('/frames.json').then(({data: frames}) => this.setState({frames}))
-    window.setTimeout(this.reloadFramesList.bind(this, null), FRAME_LIST_RELOAD_MS)
-  }
-
-  animateRadar() {
-    let delayMs = FRAME_DELAY_MS
-
-    if (this.state.frames.length > 0) {
-      if (this.state.currentFrameIndex >= this.state.frames.length) {
-        this.setState({currentFrameIndex: 0})
-        delayMs = FRAME_LOOP_DELAY_MS
-      } else {
-        const currentFrame = this.state.frames[this.state.currentFrameIndex];
-        showRadarFrame(this.map, currentFrame)
-        this.setState({currentFrame, currentFrameIndex: this.state.currentFrameIndex + 1})
-      }
-    }
-
-    window.setTimeout(this.animateRadar.bind(this, null), delayMs)
-  }
-
-  onLocation(geolocationResponse) {
-    panTo(this.map, [geolocationResponse.coords.longitude, geolocationResponse.coords.latitude])
-  }
-
-  onMapMove() {
-    const [x, y] = this.map.getView().getCenter()
-    const zoom = this.map.getView().getZoom()
-
-    localStorage.setItem('sataako-fi-x', x)
-    localStorage.setItem('sataako-fi-y', y)
-    localStorage.setItem('sataako-fi-zoom', zoom)
-  }
+      <div id="map"></div>
+      <div id="preload-frames">{renderFrameImages()}</div>
+      <div className="radar-timestamp">
+        <span>{radarFrameTimestamp}</span>
+      </div>
+      <InfoPanel />
+    </>
+  )
 }
 
 ReactDOM.render(<SataakoApp />, document.getElementById('app'))

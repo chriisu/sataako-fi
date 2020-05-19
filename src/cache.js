@@ -137,6 +137,5 @@ function coordinatesForLightnings(timestamp) {
 
 module.exports = {
   imageFileForTimestamp,
-
   framesList,
 }
