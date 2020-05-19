@@ -20,11 +20,21 @@ const SataakoApp = () => {
     y: 8438349.32742,
     zoom: 7,
   })
+  const [loading, setLoading] = useState(true)
+  const [mapLoading, setMapLoading] = useState(true)
 
   useEffect(() => {
     reloadFramesList()
     initMap()
   }, [])
+
+  useEffect(() => {
+    if (frames.length && !mapLoading) {
+      console.log('redi')
+      setLoading(false)
+      setFrameVisible(frames.length - 1)
+    }
+  }, [frames, mapLoading])
 
   async function initMap() {
     try {
@@ -35,6 +45,9 @@ const SataakoApp = () => {
     }
     map = createMap(mapSettings)
     map.on('moveend', onMapMove)
+    map.on('rendercomplete', () => {
+      setMapLoading(false)
+    })
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(onLocation)
     }
@@ -45,10 +58,11 @@ const SataakoApp = () => {
   }
 
   async function reloadFramesList() {
+    console.log('reloadFramesList')
+    setLoading(true)
     const response = await axios.get('/frames.json')
     console.log(response.status)
     response.status === 200 && setFrames(response.data)
-
   }
 
   function onMapMove() {
@@ -56,7 +70,6 @@ const SataakoApp = () => {
     const zoom = map.getView().getZoom()
     try {
       localforage.setItem('mapSettings', { x, y, zoom })
-      console.log('mapSettings localforage', { x, y, zoom })
     } catch (err) {
       console.log(err)
     }
@@ -79,7 +92,7 @@ const SataakoApp = () => {
   }
 
   const sliderTooltip = (sliderIndex) => {
-    const stringi = format(parseISO(frames[sliderIndex].timestamp), 'HH.mm')
+    const stringi = format(parseISO(frames[sliderIndex].timestamp), 'H.mm')
     return stringi
   }
 
@@ -89,7 +102,7 @@ const SataakoApp = () => {
         {frames.length && (
           <Slider
             value={frameIndex}
-            max={frames.length - 1 || 0}
+            max={frames.length - 1}
             orientation="horizontal"
             onChange={(sliderIndex, map) => setFrameVisible(sliderIndex, map)}
             format={sliderTooltip}
@@ -101,7 +114,7 @@ const SataakoApp = () => {
       <div className="radar-timestamp">
         <span>{radarFrameTimestamp}</span>
       </div>
-      <InfoPanel />
+      <InfoPanel loading={loading} refresh={reloadFramesList} />
     </>
   )
 }

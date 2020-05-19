@@ -14,7 +14,7 @@ console.log(`Radar frames cached at ${CACHE_FOLDER}`)
 const IMAGE_CACHE = []
 const LIGHTNING_CACHE = []
 const REFRESH_ONE_MINUTE = 60 * 1000
-const CACHE_AGE = 3 * 60 * 60 * 1000
+const CACHE_AGE = 4 * 60 * 60 * 1000
 
 refreshCache()
 
