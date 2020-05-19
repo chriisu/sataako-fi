@@ -5,7 +5,6 @@ const { fetchLightnings } = require('./fmi-lightnings')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const { saveFileToS3, fileExistsOnS3 } = require('./s3-bucket')
 
 /* eslint-disable no-await-in-loop */
 
@@ -15,6 +14,7 @@ console.log(`Radar frames cached at ${CACHE_FOLDER}`)
 const IMAGE_CACHE = []
 const LIGHTNING_CACHE = []
 const REFRESH_ONE_MINUTE = 60 * 1000
+const CACHE_AGE = 3 * 60 * 60 * 1000
 
 refreshCache()
 
@@ -34,7 +34,8 @@ async function refreshCache() {
         `∞∞\nradarImageUrls: ${radarImageUrls.length} (new: ${newImageUrls.length})`
       )
       await syncImages(newImageUrls)
-      await pruneCache(radarImageUrls)
+      await pruneCache(CACHE_AGE)
+      console.log('IMAGE_CACHE', IMAGE_CACHE.length)
     } catch (err) {
       console.error(
         `Failed to fetch radar frames list from FMI API: ${err.message}`
@@ -61,18 +62,15 @@ async function refreshCache() {
 async function syncImages(imageUrls) {
   for (const { url, timestamp } of imageUrls) {
     try {
-      const response = await fileExistsOnS3(`frame/${timestamp}.png`)
-      console.log(`${timestamp.slice(0, 16)}: ok`)
-    } catch (error) {
-      const httpStatus = _.get(error, 'statusCode')
-      console.log(
-        `${timestamp.slice(0, 16)}: ${httpStatus ? httpStatus : error}`
+      await fetchPostProcessedRadarFrame(
+        url,
+        path.join(CACHE_FOLDER, timestamp)
       )
-      if (httpStatus >= 400 && httpStatus < 500) {
-        await fetchAndCacheImage(url, timestamp)
-      }
+      console.log('cache.push: ', timestamp)
+      IMAGE_CACHE.push({ timestamp, url })
+    } catch (err) {
+      console.error(`Failed to fetch radar image from ${url}: ${err.message}`)
     }
-    IMAGE_CACHE.push({ timestamp, url })
   }
 }
 
@@ -89,31 +87,28 @@ async function fetchAndCacheImage(url, timestamp) {
   }
 }
 
-async function syncToS3(filePath, targetPath) {
-  try {
-    await saveFileToS3(filePath, targetPath)
-  } catch (err) {
-    console.error(`Failed to save frame to S3 to ${targetPath}: ${err.message}`)
-  }
-  try {
-    if (fs.existsSync(filePath)) {
-      fs.promises.unlink(filePath)
-    }
-  } catch (err) {
-    console.error(`Temp file removing error: ${err.message}`)
+async function pruneCache(expiringAgeMs = 60 * 60 * 1000) {
+  const removed = _.remove(
+    IMAGE_CACHE,
+    (image) => Date.now() - new Date(image.timestamp).getTime() > expiringAgeMs
+  )
+  removed.length > 0 && console.log('pruneCache removed items:', removed.length)
+  for (const { timestamp } of removed) {
+    await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}.png`))
+    await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}.webp`))
   }
 }
 
-async function pruneCache(validImageUrls) {
-  const removed = _.remove(
-    IMAGE_CACHE,
-    ({ url }) => !_.find(validImageUrls, { url })
-  )
-  removed.length > 0 && console.log('pruneCache removed items:', removed.length)
-  // for (const { timestamp } of removed) {
-  //   await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}.png`))
-  //   await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}.webp`))
-  // }
+function imageFileForTimestamp(timestamp) {
+  const image = _.find(IMAGE_CACHE, { timestamp })
+  if (!image) {
+    return null
+  }
+
+  return {
+    png: path.join(CACHE_FOLDER, `${timestamp}.png`),
+    webp: path.join(CACHE_FOLDER, `${timestamp}.webp`),
+  }
 }
 
 function framesList(publicFramesRootUrl) {
@@ -141,5 +136,7 @@ function coordinatesForLightnings(timestamp) {
 }
 
 module.exports = {
+  imageFileForTimestamp,
+
   framesList,
 }
