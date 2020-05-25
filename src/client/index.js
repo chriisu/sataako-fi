@@ -7,14 +7,12 @@ import { createMap, panTo, showRadarFrame } from './map'
 import localforage from 'localforage'
 import Slider from 'react-rangeslider'
 
-const FRAME_DELAY_MS = 500
-const FRAME_LOOP_DELAY_MS = 5000
-
 let map = null
 
 const SataakoApp = () => {
   const [frameIndex, setFrameIndex] = useState(0)
   const [frames, setFrames] = useState([])
+  const [loadedFrames, setLoadedFrames] = useState([])
   const [mapSettings, setMapSettings] = useState({
     x: 2776307.5078,
     y: 8438349.32742,
@@ -30,11 +28,28 @@ const SataakoApp = () => {
 
   useEffect(() => {
     if (frames.length && !mapLoading) {
-      console.log('redi')
-      setLoading(false)
       setFrameVisible(frames.length - 1)
+      console.log(
+        `loadedFrames.length: ${loadedFrames.length} (${frames.length})`
+      )
+      if (loadedFrames.length === frames.length) {
+        console.log('redi')
+        setLoading(false)
+      }
     }
-  }, [frames, mapLoading])
+  }, [frames, mapLoading, loadedFrames])
+
+  useEffect(() => {
+    pruneLoadedFrames()
+  }, [frames])
+
+  function pruneLoadedFrames() {
+    console.log('pruneLoadedFrames')
+    const newLoadedFrames = loadedFrames.filter((loaded) =>
+      frames.indexOf((frame) => frame.image === loaded)
+    )
+    newLoadedFrames < loadedFrames && setLoadedFrames(newLoadedFrames)
+  }
 
   async function initMap() {
     try {
@@ -54,7 +69,19 @@ const SataakoApp = () => {
   }
 
   function renderFrameImages() {
-    return frames.map((frame) => <img key={frame.image} src={frame.image} />)
+    const handleLoad = (frame) =>
+      setLoadedFrames([...loadedFrames, frame.image])
+    const handleError = (frame) =>
+      console.log('!!!!FrameError!!!!', frame.image)
+
+    return frames.map((frame) => (
+      <img
+        key={frame.image}
+        src={frame.image}
+        onLoad={() => handleLoad(frame)}
+        onError={() => handleError(frame)}
+      />
+    ))
   }
 
   async function reloadFramesList(options = {}) {
@@ -91,14 +118,19 @@ const SataakoApp = () => {
     : ''
 
   function setFrameVisible(newFrameIndex) {
-    setFrameIndex(newFrameIndex)
-    showRadarFrame(map, frames[newFrameIndex])
+    if (newFrameIndex !== frameIndex) {
+      setFrameIndex(newFrameIndex)
+      showRadarFrame(map, frames[newFrameIndex])
+    }
   }
 
-  const sliderTooltip = (sliderIndex) => {
-    const stringi = format(parseISO(frames[sliderIndex].timestamp), 'H.mm')
-    return stringi
+  function sliderTooltip(sliderIndex) {
+    return format(parseISO(frames[sliderIndex].timestamp), 'H.mm')
   }
+
+  const currentFrameIsLoaded =
+    frames.length > frameIndex &&
+    loadedFrames.includes(frames[frameIndex].image)
 
   return (
     <>
@@ -114,6 +146,9 @@ const SataakoApp = () => {
         )}
       </div>
       <div id="map"></div>
+      <div id="loading-frame" className={currentFrameIsLoaded ? '' : 'loading'}>
+        <div className="loader">Loading...</div>
+      </div>
       <div id="preload-frames">{renderFrameImages()}</div>
       <div className="radar-timestamp">
         <span>{radarFrameTimestamp}</span>
