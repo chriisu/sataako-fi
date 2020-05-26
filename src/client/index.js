@@ -45,10 +45,11 @@ const SataakoApp = () => {
 
   function pruneLoadedFrames() {
     console.log('pruneLoadedFrames')
-    const newLoadedFrames = loadedFrames.filter((loaded) =>
-      frames.indexOf((frame) => frame.image === loaded)
+    const prunedLoadedFrames = loadedFrames.filter((loaded) =>
+      frames.find((frame) => frame.image === loaded)
     )
-    newLoadedFrames < loadedFrames && setLoadedFrames(newLoadedFrames)
+    prunedLoadedFrames.length !== loadedFrames.length &&
+      setLoadedFrames(prunedLoadedFrames)
   }
 
   async function initMap() {
