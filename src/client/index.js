@@ -3,7 +3,7 @@ import { format, parseISO } from 'date-fns'
 import InfoPanel from './info-panel'
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
-import { createMap, panTo, showRadarFrame } from './map'
+import { createMap, panTo, showRadarFrame, determineMapSegment } from './map'
 import localforage from 'localforage'
 import Slider from 'react-rangeslider'
 
@@ -21,6 +21,7 @@ const SataakoApp = () => {
   })
   const [loading, setLoading] = useState(true)
   const [mapLoading, setMapLoading] = useState(true)
+  const [mapSegment, setMapSegment] = useState(12)
 
   useEffect(() => {
     reloadFramesList()
@@ -45,12 +46,19 @@ const SataakoApp = () => {
   }, [frames, mapLoading, loadedFrames])
 
   useEffect(() => {
-    map && frames.length && showRadarFrame(map, frames[frameIndex])
+    map &&
+      !mapLoading &&
+      frames.length &&
+      showRadarFrame(map, frames[frameIndex], mapSegment)
   }, [frameIndex])
 
   useEffect(() => {
     pruneLoadedFrames()
   }, [frames])
+
+  useEffect(() => {
+    reloadFramesList()
+  }, [mapSegment])
 
   function pruneLoadedFrames() {
     console.log('pruneLoadedFrames')
@@ -72,6 +80,7 @@ const SataakoApp = () => {
   async function initMap() {
     try {
       const mapSettings = await localforage.getItem('mapSettings')
+      console.log('∞∞: initMap -> mapSettings', mapSettings)
       setMapSettings(mapSettings)
     } catch (err) {
       console.log(err)
@@ -103,13 +112,13 @@ const SataakoApp = () => {
   }
 
   async function reloadFramesList(options = {}) {
-    const { ignoreCache } = options
+    const { ignoreCache, segment = mapSegment } = options
     console.log('reloadFramesList')
     setLoading(true)
     const reqConfig = ignoreCache
       ? { headers: { 'Cache-Control': 'no-cache' } }
       : {}
-    const response = await axios.get('/frames.json', reqConfig)
+    const response = await axios.get(`/frames-${segment >= 0 ? segment : 12}.json`, reqConfig)
     console.log(response.status)
     response.status === 200 && setFrames(response.data)
   }
@@ -117,11 +126,15 @@ const SataakoApp = () => {
   function onMapMove() {
     const [x, y] = map.getView().getCenter()
     const zoom = map.getView().getZoom()
+    console.log('∞∞: onMapMove -> [x, y] + zoom', [x, y], zoom)
     try {
       localforage.setItem('mapSettings', { x, y, zoom })
     } catch (err) {
       console.log(err)
     }
+    const currentSegment = determineMapSegment([x, y], zoom)
+    console.log('∞∞: onMapMove -> currentSegment', currentSegment)
+    currentSegment !== mapSegment && setMapSegment(currentSegment)
   }
 
   function onLocation(geolocationResponse) {
@@ -157,7 +170,7 @@ const SataakoApp = () => {
             value={frameIndex}
             max={frames.length - 1}
             orientation="horizontal"
-            onChange={(sliderIndex, map) => setFrameVisible(sliderIndex, map)}
+            onChange={(sliderIndex) => setFrameVisible(sliderIndex)}
             format={sliderTooltip}
           />
         )}

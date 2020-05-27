@@ -60,30 +60,19 @@ async function refreshCache() {
 }
 
 async function syncImages(imageUrls) {
-  for (const { url, timestamp } of imageUrls) {
+  for (const [index, { url, timestamp, area }] of imageUrls.entries()) {
+    const fileName = `${timestamp}_${area}`
     try {
+      console.log(`Fetchin ${fileName}`)
       await fetchPostProcessedRadarFrame(
         url,
-        path.join(CACHE_FOLDER, timestamp)
+        path.join(CACHE_FOLDER, fileName)
       )
-      console.log('cache.push: ', timestamp)
-      IMAGE_CACHE.push({ timestamp, url })
+      console.log('cache.push: ', fileName)
+      IMAGE_CACHE.push({ timestamp, url, area })
     } catch (err) {
       console.error(`Failed to fetch radar image from ${url}: ${err.message}`)
     }
-  }
-}
-
-async function fetchAndCacheImage(url, timestamp) {
-  const filePath = path.join(CACHE_FOLDER, timestamp)
-  try {
-    await fetchPostProcessedRadarFrame(url, filePath)
-    Promise.all([
-      await syncToS3(`${filePath}.png`, `frame/${timestamp}.png`),
-      await syncToS3(`${filePath}.webp`, `frame/${timestamp}.webp`),
-    ])
-  } catch (err) {
-    console.error(`Failed to fetch radar image from ${url}: ${err.message}`)
   }
 }
 
@@ -99,24 +88,26 @@ async function pruneCache(expiringAgeMs = 60 * 60 * 1000) {
   }
 }
 
-function imageFileForTimestamp(timestamp) {
-  const image = _.find(IMAGE_CACHE, { timestamp })
+function imageFileForTimestamp(timestamp, area) {
+  const image = _.find(IMAGE_CACHE, { timestamp, area })
   if (!image) {
     return null
   }
 
   return {
-    png: path.join(CACHE_FOLDER, `${timestamp}.png`),
-    webp: path.join(CACHE_FOLDER, `${timestamp}.webp`),
+    png: path.join(CACHE_FOLDER, `${timestamp}_${area}.png`),
+    webp: path.join(CACHE_FOLDER, `${timestamp}_${area}.webp`),
   }
 }
 
-function framesList(publicFramesRootUrl) {
+function framesList(publicFramesRootUrl, segment = 12) {
   return _(IMAGE_CACHE)
-    .map(({ timestamp }) => ({
-      image: publicFramesRootUrl + timestamp,
+    .filter(frame => Number(frame.area) === Number(segment))
+    .map(({ timestamp, area }) => ({
+      image: publicFramesRootUrl + timestamp + '/' + area,
       lightnings: coordinatesForLightnings(timestamp),
       timestamp,
+      area
     }))
     .sortBy(['timestamp'])
     .value()

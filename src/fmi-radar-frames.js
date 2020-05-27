@@ -21,7 +21,7 @@ async function fetchRadarImageUrls() {
   const {data} = await axios.get(fmiRadarFramesRequestUrl)
   const wfsResponse = await xmlToObject(data)
   const frameReferences = await extractFrameReferences(wfsResponse)
-  return frameReferences.map(setProjectionAndCleanupUrl)
+  return frameReferences.flatMap(setProjectionAndCleanupUrl)
 }
 
 function xmlToObject(xml) {
@@ -39,18 +39,29 @@ function extractFrameReferences(featureQueryResult) {
 
 function setProjectionAndCleanupUrl(frameReference) {
   const radarUrl = url.parse(frameReference.url, true)
+  // console.log('∞∞: setProjectionAndCleanupUrl -> radarUrl', radarUrl)
   radarUrl.host = FMI.WMS_HOST
   radarUrl.query.format = 'image/png'
   radarUrl.query.width = FMI.WIDTH
   radarUrl.query.height = FMI.HEIGHT
-  radarUrl.query.bbox = FMI.EPSG_3067_BOUNDS
+  // radarUrl.query.bbox = FMI.EPSG_3067_BOUNDS
   radarUrl.query.srs = FMI.EPSG_3067_SRS
   Reflect.deleteProperty(radarUrl.query, 'styles')
   Reflect.deleteProperty(radarUrl, 'search')
-  return {
-    url: url.format(radarUrl),
-    timestamp: frameReference.timestamp
-  }
+  // return {
+  //   url: url.format(radarUrl),
+  //   timestamp: frameReference.timestamp
+  // }
+  return FMI.EPSG_3067_BOUNDS.map((bound, i) => {
+    const radarUrlBound = {...radarUrl}
+    radarUrlBound.query.bbox = bound
+
+    return {
+      url: url.format(radarUrlBound),
+      timestamp: frameReference.timestamp,
+      area: i
+    }
+  })
 }
 
 module.exports = {

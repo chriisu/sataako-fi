@@ -22,8 +22,9 @@ if (process.env.NODE_ENV == 'production') {
 app.use(compression())
 app.use(express.static(`${__dirname}/../public`))
 
-app.get('/frame/:timestamp', async (req, res) => {
-  const image = imageFileForTimestamp(req.params.timestamp)
+app.get('/frame/:timestamp/:area', async (req, res) => {
+  const { timestamp, area } = req.params
+  const image = imageFileForTimestamp(timestamp, Number(area))
   if (image) {
     res.set('Cache-Control', 'public, max-age=86400')
     res.format({
@@ -41,10 +42,10 @@ app.get('/frame/:timestamp', async (req, res) => {
   }
 })
 
-app.get('/frames.json', (req, res) => {
+app.get('/frames-:segment.json', (req, res) => {
   const publicRootUrl = `${req.protocol}://${req.hostname}${PUBLIC_URL_PORT}/frame/`
   res.set('Cache-Control', 'public, max-age=60')
-  res.json(framesList(publicRootUrl))
+  res.json(framesList(publicRootUrl, req.params.segment))
 })
 
 const server = app.listen(PORT, () => {
