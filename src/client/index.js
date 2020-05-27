@@ -8,6 +8,7 @@ import localforage from 'localforage'
 import Slider from 'react-rangeslider'
 
 let map = null
+const animationFrameTimeMs = 150
 
 const SataakoApp = () => {
   const [frameIndex, setFrameIndex] = useState(0)
@@ -33,11 +34,19 @@ const SataakoApp = () => {
         `loadedFrames.length: ${loadedFrames.length} (${frames.length})`
       )
       if (loadedFrames.length === frames.length) {
-        console.log('redi')
-        setLoading(false)
+        const preWait = 500
+        preloadMapFrames(preWait)
+        setTimeout(() => {
+          setLoading(false)
+          console.log('redi')
+        }, preWait + frames.length * animationFrameTimeMs)
       }
     }
   }, [frames, mapLoading, loadedFrames])
+
+  useEffect(() => {
+    map && frames.length && showRadarFrame(map, frames[frameIndex])
+  }, [frameIndex])
 
   useEffect(() => {
     pruneLoadedFrames()
@@ -50,6 +59,14 @@ const SataakoApp = () => {
     )
     prunedLoadedFrames.length !== loadedFrames.length &&
       setLoadedFrames(prunedLoadedFrames)
+  }
+
+  function preloadMapFrames(preWait) {
+    frames.forEach((_, i) =>
+      setTimeout(() => {
+        setFrameIndex(i)
+      }, preWait + i * animationFrameTimeMs)
+    )
   }
 
   async function initMap() {
@@ -121,7 +138,6 @@ const SataakoApp = () => {
   function setFrameVisible(newFrameIndex) {
     if (newFrameIndex !== frameIndex) {
       setFrameIndex(newFrameIndex)
-      showRadarFrame(map, frames[newFrameIndex])
     }
   }
 
