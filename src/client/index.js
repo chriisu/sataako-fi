@@ -43,7 +43,7 @@ const SataakoApp = () => {
       // )
       if (loadedFrames.length === frames.length) {
         animationDone
-          ? setLoading(false) && console.log('setLoading(false)')
+          ? setLoading(false)
           : preloadAnimation()
       }
     }
@@ -73,8 +73,8 @@ const SataakoApp = () => {
   }
 
   function pruneLoadedFrames() {
-    const prunedLoadedFrames = loadedFrames.filter((loaded) =>
-      frames.find((frame) => frame.image === loaded)
+    const prunedLoadedFrames = loadedFrames.filter((loadedFrame) =>
+      frames.find((frame) => frame.image === loadedFrame)
     )
     prunedLoadedFrames.length !== loadedFrames.length &&
       console.log('∞∞: prunedLoadedFrames', prunedLoadedFrames)
@@ -143,7 +143,6 @@ const SataakoApp = () => {
   function onMapMove() {
     const [x, y] = map.getView().getCenter()
     const zoom = map.getView().getZoom()
-    console.log('∞∞: onMapMove -> [x, y] + zoom', [x, y], zoom)
     try {
       localforage.setItem('mapSettings', { x, y, zoom })
     } catch (err) {
@@ -176,14 +175,6 @@ const SataakoApp = () => {
     const frameIsLoaded = loadedFrames.find(
       (frame) => frames[index] && frames[index].image === frame
     )
-    waitLoading &&
-      console.log(
-        '∞∞: waitLoading',
-        waitLoading,
-        segment,
-        mapSegment,
-        frameIsLoaded
-      )
     if (
       (index !== activeFrame.index || segment !== activeFrame.segment) &&
       (!waitLoading || frameIsLoaded)

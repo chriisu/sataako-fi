@@ -22,34 +22,35 @@ proj4.defs('EPSG:3067', '+proj=utm +zone=35 +ellps=GRS80 +units=m +no_defs')
 register(proj4)
 const imageProjection = new Projection({code: 'EPSG:3067'})
 const imageSegments = [
-  [50000, 6450000, 360000, 6837500],
-  [260000, 6450000, 570000, 6837500],
-  [470000, 6450000, 780000, 6837500],
-  [50000, 6737500, 360000, 7125000],
-  [260000, 6737500, 570000, 7125000],
-  [470000, 6737500, 780000, 7125000],
-  [50000, 7025000, 360000, 7412500],
-  [260000, 7025000, 570000, 7412500],
-  [470000, 7025000, 780000, 7412500],
-  [50000, 7312500, 360000, 7700000],
-  [260000, 7312500, 570000, 7700000],
-  [470000, 7312500, 780000, 7700000],
-  [50000, 6450000, 780000, 7362500], //zoomedOut
+  [50000, 6450000, 390000, 6875000],
+  [240000, 6450000, 580000, 6875000],
+  [430000, 6450000, 770000, 6875000],
+  [50000, 6725000, 390000, 7150000],
+  [240000, 6725000, 580000, 7150000],
+  [430000, 6725000, 770000, 7150000],
+  [50000, 7000000, 390000, 7425000],
+  [240000, 7000000, 580000, 7425000],
+  [430000, 7000000, 770000, 7425000],
+  [50000, 7275000, 390000, 7700000],
+  [240000, 7275000, 580000, 7700000],
+  [430000, 7275000, 770000, 7700000],
+
+  [50000, 6450000, 770000, 7362500], //zoomedOut
+  [50000, 6787500, 770000, 7700000], //zoomedOut
 ]
 const segments = [
-  { x1: 50000,  x2: 293333, y1: 6450000, y2: 6762500 },
-  { x1: 293333, x2: 536667, y1: 6450000, y2: 6762500 },
-  { x1: 536667, x2: 780000, y1: 6450000, y2: 6762500 },
-  { x1: 50000,  x2: 293333, y1: 6762500, y2: 7075000 },
-  { x1: 293333, x2: 536667, y1: 6762500, y2: 7075000 },
-  { x1: 536667, x2: 780000, y1: 6762500, y2: 7075000 },
-  { x1: 50000,  x2: 293333, y1: 7075000, y2: 7387500 },
-  { x1: 293333, x2: 536667, y1: 7075000, y2: 7387500 },
-  { x1: 536667, x2: 780000, y1: 7075000, y2: 7387500 },
-  { x1: 50000,  x2: 293333, y1: 7387500, y2: 7700000 },
-  { x1: 293333, x2: 536667, y1: 7387500, y2: 7700000 },
-  { x1: 536667, x2: 780000, y1: 7387500, y2: 7700000 },
-  // { x1: 50000, x2: 780000, y1: 6450000, y2: 7362500 }
+  { x1: 50000, x2: 290000, y1: 6450000, y2: 6762500 },
+  { x1: 290000, x2: 530000, y1: 6450000, y2: 6762500 },
+  { x1: 530000, x2: 770000, y1: 6450000, y2: 6762500 },
+  { x1: 50000, x2: 290000, y1: 6762500, y2: 7075000 },
+  { x1: 290000, x2: 530000, y1: 6762500, y2: 7075000 },
+  { x1: 530000, x2: 770000, y1: 6762500, y2: 7075000 },
+  { x1: 50000, x2: 290000, y1: 7075000, y2: 7387500 },
+  { x1: 290000, x2: 530000, y1: 7075000, y2: 7387500 },
+  { x1: 530000, x2: 770000, y1: 7075000, y2: 7387500 },
+  { x1: 50000, x2: 290000, y1: 7387500, y2: 7700000 },
+  { x1: 290000, x2: 530000, y1: 7387500, y2: 7700000 },
+  { x1: 530000, x2: 770000, y1: 7387500, y2: 7700000 }
 ]
 
 // const imageExtent = [20000, 6450000, 770000, 7000000]
@@ -62,7 +63,6 @@ function createMap(settings) {
     minZoom: 5,
     maxZoom: 13,
     projection: 'EPSG:3857',
-    // projection: 'EPSG:3067',
     zoom
   })
 
@@ -120,7 +120,6 @@ function showRadarFrame(map, {frame, segment, index}) {
     console.log('showRadarFrame FAIL', segment)
     return
   }
-  console.log('showRadarFrame, ', segment, index)
   const radarImageSource = radarImageSourcesCache[image] || (radarImageSourcesCache[image] = createImageSource(image, segment))
   const radarLayer = map.getLayers().getArray()[1]
   radarLayer.setSource(radarImageSource)
@@ -171,10 +170,11 @@ function panTo(map, lonLat) {
   map.getView().animate({center, duration: 1000})
 }
 
-function determineMapSegment(coordinates, zoom) {
+function determineMapSegment(coordinates, zoom, previousSegment) {
   const [x, y] = transform(coordinates, 'EPSG:3857', 'EPSG:3067' )
-  return zoom < 8
-    ? 12
+  const determineZoomedOutSegment = (yCoord) => yCoord > 7075000 ? 13 : 12
+  return zoom < 7.5
+    ? determineZoomedOutSegment(y)
     : segments.findIndex(
         (segment) =>
           x >= segment.x1 && x < segment.x2 && y >= segment.y1 && y < segment.y2

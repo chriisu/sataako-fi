@@ -8,18 +8,28 @@ function calculateAxelBounds(bounds, segments, overlap) {
   ])
 }
 
-const xSegments = calculateAxelBounds([50000, 780000], 3, 50000)
+const bounds = [[50000, 770000], [6450000, 7700000]]
+const xSegments = calculateAxelBounds(bounds[0], 3, 75000)
 console.log('∞∞: xSegments', xSegments)
-const ySegments = calculateAxelBounds([6450000,7700000], 4, 50000)
+const ySegments = calculateAxelBounds(bounds[1], 4, 75000)
 console.log('∞∞: ySegments', ySegments)
 
 const allSegments = ySegments.flatMap(y => xSegments.map(x => `${x[0]}, ${y[0]}, ${x[1]}, ${y[1]}`))
-console.log('∞∞: allSegments', allSegments)
+// console.log('∞∞: allSegments', allSegments)
 
-const xSegmentsWithoutOverlap = calculateAxelBounds([50000, 780000], 3, 0)
-const ySegmentsWithoutOverlap = calculateAxelBounds([6450000,7700000], 4, 0)
-const allSegmentsWithoutOverlap = ySegmentsWithoutOverlap.flatMap(y => xSegmentsWithoutOverlap.map(x => `${x[0]}, ${y[0]}, ${x[1]}, ${y[1]}`))
-console.log('∞∞: allSegmentsWithoutOverlap', allSegmentsWithoutOverlap)
+const xSegmentsWithoutOverlap = calculateAxelBounds(bounds[0], 3, 0)
+console.log('∞∞: xSegmentsWithoutOverlap', xSegmentsWithoutOverlap)
+const ySegmentsWithoutOverlap = calculateAxelBounds(bounds[1], 4, 0)
+console.log('∞∞: ySegmentsWithoutOverlap', ySegmentsWithoutOverlap)
+const allSegmentsWithoutOverlap = ySegmentsWithoutOverlap.flatMap(y => xSegmentsWithoutOverlap.map((x) => ({
+    x1: x[0],
+    x2: x[1],
+    y1: y[0],
+    y2: y[1],
+  }))
+)
+// console.log('∞∞: allSegmentsWithoutOverlap', allSegmentsWithoutOverlap)
+console.log((xSegments[0][1] - xSegments[0][0])/(ySegments[0][1] - ySegments[0][0]))
 
 
 // Y
@@ -57,23 +67,24 @@ module.exports = {
   WMS_HOST: 'openwms.fmi.fi',
   // EPSG_3067_BOUNDS: '20000, 6450000, 770000, 7000000',
   EPSG_3067_BOUNDS: [
-    '50000, 6450000, 360000, 6837500',
-    '260000, 6450000, 570000, 6837500',
-    '470000, 6450000, 780000, 6837500',
-    '50000, 6737500, 360000, 7125000',
-    '260000, 6737500, 570000, 7125000',
-    '470000, 6737500, 780000, 7125000',
-    '50000, 7025000, 360000, 7412500',
-    '260000, 7025000, 570000, 7412500',
-    '470000, 7025000, 780000, 7412500',
-    '50000, 7312500, 360000, 7700000',
-    '260000, 7312500, 570000, 7700000',
-    '470000, 7312500, 780000, 7700000',
-    '50000, 6450000, 780000, 7362500' //zoomedOut
+    '50000, 6450000, 390000, 6875000',
+    '240000, 6450000, 580000, 6875000',
+    '430000, 6450000, 770000, 6875000',
+    '50000, 6725000, 390000, 7150000',
+    '240000, 6725000, 580000, 7150000',
+    '430000, 6725000, 770000, 7150000',
+    '50000, 7000000, 390000, 7425000',
+    '240000, 7000000, 580000, 7425000',
+    '430000, 7000000, 770000, 7425000',
+    '50000, 7275000, 390000, 7700000',
+    '240000, 7275000, 580000, 7700000',
+    '430000, 7275000, 770000, 7700000',
+    '50000, 6450000, 770000, 7362500', //zoomedOut
+    '50000, 6787500, 770000, 7700000' //zoomedOut
   ],
   EPSG_3067_SRS: 'EPSG:3067',
-  WIDTH: 800,
-  HEIGHT: 1000,
+  WIDTH: 600,
+  HEIGHT: 750,
 }
 
 // P 7 700 000
