@@ -11,7 +11,11 @@ let map = null
 const animationFrameTimeMs = 150
 
 const SataakoApp = () => {
-  const [frameIndex, setFrameIndex] = useState(0)
+  const [activeFrame, setActiveFrame] = useState({
+    frame: null,
+    index: 0,
+    segment: 12,
+  })
   const [frames, setFrames] = useState([])
   const [loadedFrames, setLoadedFrames] = useState([])
   const [mapSettings, setMapSettings] = useState({
@@ -22,6 +26,7 @@ const SataakoApp = () => {
   const [loading, setLoading] = useState(true)
   const [mapLoading, setMapLoading] = useState(true)
   const [mapSegment, setMapSegment] = useState(12)
+  const [animationDone, setAnimationDone] = useState(false)
 
   useEffect(() => {
     reloadFramesList()
@@ -30,41 +35,49 @@ const SataakoApp = () => {
 
   useEffect(() => {
     if (frames.length && !mapLoading) {
-      setFrameVisible(frames.length - 1)
-      console.log(
-        `loadedFrames.length: ${loadedFrames.length} (${frames.length})`
-      )
+      animationDone
+        ? setFrameVisible({ segment: mapSegment, waitLoading: true })
+        : setFrameVisible({ index: frames.length - 1 })
+      // console.log(
+      //   `loadedFrames.length: ${loadedFrames.length} (${frames.length})`
+      // )
       if (loadedFrames.length === frames.length) {
-        const preWait = 500
-        preloadMapFrames(preWait)
-        setTimeout(() => {
-          setLoading(false)
-          console.log('redi')
-        }, preWait + frames.length * animationFrameTimeMs)
+        animationDone
+          ? setLoading(false) && console.log('setLoading(false)')
+          : preloadAnimation()
       }
     }
   }, [frames, mapLoading, loadedFrames])
 
   useEffect(() => {
-    map &&
-      !mapLoading &&
-      frames.length &&
-      showRadarFrame(map, frames[frameIndex], mapSegment)
-  }, [frameIndex])
+    map && !mapLoading && activeFrame.frame && showRadarFrame(map, activeFrame)
+  }, [activeFrame])
 
   useEffect(() => {
     pruneLoadedFrames()
   }, [frames])
 
   useEffect(() => {
+    console.log(`useEffect mapSegment ${mapSegment}`)
     reloadFramesList()
   }, [mapSegment])
 
+  function preloadAnimation() {
+    const preWait = 500
+    preloadMapFrames(preWait)
+    setTimeout(() => {
+      setLoading(false)
+      setAnimationDone(true)
+      console.log('redi')
+    }, preWait + frames.length * animationFrameTimeMs)
+  }
+
   function pruneLoadedFrames() {
-    console.log('pruneLoadedFrames')
     const prunedLoadedFrames = loadedFrames.filter((loaded) =>
       frames.find((frame) => frame.image === loaded)
     )
+    prunedLoadedFrames.length !== loadedFrames.length &&
+      console.log('∞∞: prunedLoadedFrames', prunedLoadedFrames)
     prunedLoadedFrames.length !== loadedFrames.length &&
       setLoadedFrames(prunedLoadedFrames)
   }
@@ -72,7 +85,7 @@ const SataakoApp = () => {
   function preloadMapFrames(preWait) {
     frames.forEach((_, i) =>
       setTimeout(() => {
-        setFrameIndex(i)
+        setActiveFrame({ ...activeFrame, index: i, frame: frames[i] })
       }, preWait + i * animationFrameTimeMs)
     )
   }
@@ -115,10 +128,14 @@ const SataakoApp = () => {
     const { ignoreCache, segment = mapSegment } = options
     console.log('reloadFramesList')
     setLoading(true)
+    console.log('∞∞: reloadFramesList -> setLoading(true)')
     const reqConfig = ignoreCache
       ? { headers: { 'Cache-Control': 'no-cache' } }
       : {}
-    const response = await axios.get(`/frames-${segment >= 0 ? segment : 12}.json`, reqConfig)
+    const response = await axios.get(
+      `/frames-${segment >= 0 ? segment : 12}.json`,
+      reqConfig
+    )
     console.log(response.status)
     response.status === 200 && setFrames(response.data)
   }
@@ -133,8 +150,11 @@ const SataakoApp = () => {
       console.log(err)
     }
     const currentSegment = determineMapSegment([x, y], zoom)
-    console.log('∞∞: onMapMove -> currentSegment', currentSegment)
-    currentSegment !== mapSegment && setMapSegment(currentSegment)
+    updateMapSegment(currentSegment)
+  }
+
+  const updateMapSegment = (newSegment) => {
+    setMapSegment(newSegment)
   }
 
   function onLocation(geolocationResponse) {
@@ -144,13 +164,32 @@ const SataakoApp = () => {
     ])
   }
 
-  const radarFrameTimestamp = frames[frameIndex]
-    ? format(parseISO(frames[frameIndex].timestamp), 'd.M. HH:mm')
+  const radarFrameTimestamp = activeFrame.frame
+    ? format(parseISO(activeFrame.frame.timestamp), 'd.M. HH:mm')
     : ''
 
-  function setFrameVisible(newFrameIndex) {
-    if (newFrameIndex !== frameIndex) {
-      setFrameIndex(newFrameIndex)
+  function setFrameVisible({
+    index = activeFrame.index,
+    segment = mapSegment,
+    waitLoading = false,
+  }) {
+    const frameIsLoaded = loadedFrames.find(
+      (frame) => frames[index] && frames[index].image === frame
+    )
+    waitLoading &&
+      console.log(
+        '∞∞: waitLoading',
+        waitLoading,
+        segment,
+        mapSegment,
+        frameIsLoaded
+      )
+    if (
+      (index !== activeFrame.index || segment !== activeFrame.segment) &&
+      (!waitLoading || frameIsLoaded)
+    ) {
+      const frame = frames[index]
+      setActiveFrame({ frame, index, segment })
     }
   }
 
@@ -159,18 +198,19 @@ const SataakoApp = () => {
   }
 
   const currentFrameIsLoaded =
-    frames.length > frameIndex &&
-    loadedFrames.includes(frames[frameIndex].image)
+    frames.length > activeFrame.index &&
+    activeFrame.frame &&
+    loadedFrames.includes(activeFrame.frame.image)
 
   return (
     <>
       <div id="control">
         {frames.length && (
           <Slider
-            value={frameIndex}
+            value={activeFrame.index}
             max={frames.length - 1}
             orientation="horizontal"
-            onChange={(sliderIndex) => setFrameVisible(sliderIndex)}
+            onChange={(sliderIndex) => setFrameVisible({ index: sliderIndex })}
             format={sliderTooltip}
           />
         )}

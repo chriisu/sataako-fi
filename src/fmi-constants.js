@@ -72,8 +72,8 @@ module.exports = {
     '50000, 6450000, 780000, 7362500' //zoomedOut
   ],
   EPSG_3067_SRS: 'EPSG:3067',
-  WIDTH: 600,
-  HEIGHT: 750,
+  WIDTH: 800,
+  HEIGHT: 1000,
 }
 
 // P 7 700 000

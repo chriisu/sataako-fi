@@ -22,6 +22,21 @@ proj4.defs('EPSG:3067', '+proj=utm +zone=35 +ellps=GRS80 +units=m +no_defs')
 register(proj4)
 const imageProjection = new Projection({code: 'EPSG:3067'})
 const imageSegments = [
+  [50000, 6450000, 360000, 6837500],
+  [260000, 6450000, 570000, 6837500],
+  [470000, 6450000, 780000, 6837500],
+  [50000, 6737500, 360000, 7125000],
+  [260000, 6737500, 570000, 7125000],
+  [470000, 6737500, 780000, 7125000],
+  [50000, 7025000, 360000, 7412500],
+  [260000, 7025000, 570000, 7412500],
+  [470000, 7025000, 780000, 7412500],
+  [50000, 7312500, 360000, 7700000],
+  [260000, 7312500, 570000, 7700000],
+  [470000, 7312500, 780000, 7700000],
+  [50000, 6450000, 780000, 7362500], //zoomedOut
+]
+const segments = [
   { x1: 50000,  x2: 293333, y1: 6450000, y2: 6762500 },
   { x1: 293333, x2: 536667, y1: 6450000, y2: 6762500 },
   { x1: 536667, x2: 780000, y1: 6450000, y2: 6762500 },
@@ -34,8 +49,9 @@ const imageSegments = [
   { x1: 50000,  x2: 293333, y1: 7387500, y2: 7700000 },
   { x1: 293333, x2: 536667, y1: 7387500, y2: 7700000 },
   { x1: 536667, x2: 780000, y1: 7387500, y2: 7700000 },
-  { x1: 50000, x2: 780000, y1: 6450000, y2: 7700000 }
+  // { x1: 50000, x2: 780000, y1: 6450000, y2: 7362500 }
 ]
+
 // const imageExtent = [20000, 6450000, 770000, 7000000]
 
 function createMap(settings) {
@@ -98,13 +114,14 @@ function createIconLayer(position) {
 
 const radarImageSourcesCache = {}
 
-function showRadarFrame(map, {image, lightnings}, mapSegment) {
-  if (mapSegment < 0) {
-    console.log('showRadarFrame FAIL', mapSegment)
+function showRadarFrame(map, {frame, segment, index}) {
+  const {image, lightnings} = frame
+  if (segment < 0) {
+    console.log('showRadarFrame FAIL', segment)
     return
   }
-  console.log('showRadarFrame, ', mapSegment)
-  const radarImageSource = radarImageSourcesCache[image] || (radarImageSourcesCache[image] = createImageSource(image, mapSegment))
+  console.log('showRadarFrame, ', segment, index)
+  const radarImageSource = radarImageSourcesCache[image] || (radarImageSourcesCache[image] = createImageSource(image, segment))
   const radarLayer = map.getLayers().getArray()[1]
   radarLayer.setSource(radarImageSource)
   radarLayer.setVisible(true)
@@ -139,10 +156,8 @@ function createLightningLayer() {
 }
 
 function createImageSource(url, mapSegment) {
-  const {x1, x2, y1, y2} = imageSegments[mapSegment]
-  const imageExtent = [x1, y1, x2, y2]
   return new ImageStatic({
-    imageExtent,
+    imageExtent: imageSegments[mapSegment],
     projection: imageProjection,
     url
   })
@@ -160,7 +175,7 @@ function determineMapSegment(coordinates, zoom) {
   const [x, y] = transform(coordinates, 'EPSG:3857', 'EPSG:3067' )
   return zoom < 8
     ? 12
-    : imageSegments.findIndex(
+    : segments.findIndex(
         (segment) =>
           x >= segment.x1 && x < segment.x2 && y >= segment.y1 && y < segment.y2
       )
