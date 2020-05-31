@@ -24,7 +24,6 @@ const SataakoApp = () => {
   const [loading, setLoading] = useState(true)
   const [mapLoading, setMapLoading] = useState(true)
   const [mapSegment, setMapSegment] = useState(12)
-  const [animationDone, setAnimationDone] = useState(false)
 
   useEffect(() => {
     reloadFramesList({ ignoreCache: true })
@@ -33,11 +32,13 @@ const SataakoApp = () => {
 
   useEffect(() => {
     if (frames.length && !mapLoading) {
-      animationDone
+      !activeFrame.frame &&
+        console.log('activeFrame.frame null', activeFrame.frame)
+      activeFrame.frame
         ? setFrameVisible({ segment: mapSegment, waitLoading: true })
         : setFrameVisible({ index: frames.length - 1 })
       if (loadedFrames.length === frames.length) {
-        animationDone ? setLoading(false) : preloadAnimation()
+        setLoading(false)
       }
     }
   }, [frames, mapLoading, loadedFrames])
@@ -57,16 +58,6 @@ const SataakoApp = () => {
     }
   }, [mapSegment])
 
-  function preloadAnimation() {
-    const preWait = 500
-    preloadMapFrames(preWait)
-    setTimeout(() => {
-      setLoading(false)
-      setAnimationDone(true)
-      console.log('redi')
-    }, preWait + frames.length * animationFrameTimeMs)
-  }
-
   function pruneLoadedFrames() {
     const prunedLoadedFrames = loadedFrames.filter((loadedFrame) =>
       frames.find((frame) => frame.image === loadedFrame)
@@ -75,14 +66,6 @@ const SataakoApp = () => {
       console.log('∞∞: prunedLoadedFrames', prunedLoadedFrames)
     prunedLoadedFrames.length !== loadedFrames.length &&
       setLoadedFrames(prunedLoadedFrames)
-  }
-
-  function preloadMapFrames(preWait) {
-    frames.forEach((_, i) =>
-      setTimeout(() => {
-        setActiveFrame({ ...activeFrame, index: i, frame: frames[i] })
-      }, preWait + i * animationFrameTimeMs)
-    )
   }
 
   async function initMap() {
@@ -123,9 +106,7 @@ const SataakoApp = () => {
     const { ignoreCache, segment = mapSegment } = options
     console.log('reloadFramesList')
     setLoading(true)
-    const fetchConfig = ignoreCache
-      ? {  cache: 'reload' }
-      : {}
+    const fetchConfig = ignoreCache ? { cache: 'reload' } : {}
     console.log('∞∞: reloadFramesList -> fetchConfig', fetchConfig)
     const response = await fetch(
       `/frames-${segment >= 0 ? segment : 12}.json`,
