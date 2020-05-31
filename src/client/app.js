@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { format, parseISO } from 'date-fns'
 import InfoPanel from './info-panel'
 import React, { useState, useEffect } from 'react'
@@ -28,7 +27,7 @@ const SataakoApp = () => {
   const [animationDone, setAnimationDone] = useState(false)
 
   useEffect(() => {
-    reloadFramesList()
+    reloadFramesList({ ignoreCache: true })
     initMap()
   }, [])
 
@@ -37,13 +36,8 @@ const SataakoApp = () => {
       animationDone
         ? setFrameVisible({ segment: mapSegment, waitLoading: true })
         : setFrameVisible({ index: frames.length - 1 })
-      // console.log(
-      //   `loadedFrames.length: ${loadedFrames.length} (${frames.length})`
-      // )
       if (loadedFrames.length === frames.length) {
-        animationDone
-          ? setLoading(false)
-          : preloadAnimation()
+        animationDone ? setLoading(false) : preloadAnimation()
       }
     }
   }, [frames, mapLoading, loadedFrames])
@@ -58,7 +52,9 @@ const SataakoApp = () => {
 
   useEffect(() => {
     console.log(`useEffect mapSegment ${mapSegment}`)
-    reloadFramesList()
+    if (!loading || activeFrame.segment !== mapSegment) {
+      reloadFramesList({ ignoreCache: true })
+    }
   }, [mapSegment])
 
   function preloadAnimation() {
@@ -127,16 +123,15 @@ const SataakoApp = () => {
     const { ignoreCache, segment = mapSegment } = options
     console.log('reloadFramesList')
     setLoading(true)
-    console.log('∞∞: reloadFramesList -> setLoading(true)')
-    const reqConfig = ignoreCache
-      ? { headers: { 'Cache-Control': 'no-cache' } }
+    const fetchConfig = ignoreCache
+      ? {  cache: 'reload' }
       : {}
-    const response = await axios.get(
+    console.log('∞∞: reloadFramesList -> fetchConfig', fetchConfig)
+    const response = await fetch(
       `/frames-${segment >= 0 ? segment : 12}.json`,
-      reqConfig
+      fetchConfig
     )
-    console.log(response.status)
-    response.status === 200 && setFrames(response.data)
+    response.ok && setFrames(await response.json())
   }
 
   function onMapMove() {

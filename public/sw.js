@@ -21,14 +21,15 @@ self.addEventListener('fetch', (event) => {
   //We defind the promise (the async code block) that return either the cached response or the network one
   //It should return a response object
   const getCustomResponsePromise = async () => {
-    console.log(`URL ${event.request.url}`, `location origin ${location}`)
-
     try {
       //Try to get the cached response
-      const cachedResponse = await caches.match(event.request)
+      const cachedResponse =
+        event.request.cache === 'reload'
+          ? null
+          : await caches.match(event.request)
       if (cachedResponse) {
         //Return the cached response if present
-        console.log(`Cached response ${cachedResponse}`)
+        console.log(`URL cached response ${event.request.url}`)
         return cachedResponse
       }
 
@@ -52,5 +53,7 @@ self.addEventListener('fetch', (event) => {
 
   //In order to override the default fetch behavior, we must provide the result of our custom behavoir to the
   //event.respondWith method
-  event.respondWith(getCustomResponsePromise())
+  if (event.request.method === 'GET' && event.request.url.startsWith('http')) {
+    event.respondWith(getCustomResponsePromise())
+  }
 })
