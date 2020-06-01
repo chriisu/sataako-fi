@@ -15,6 +15,7 @@ import XYZ from 'ol/source/XYZ'
 import {fromLonLat} from 'ol/proj'
 import VectorSource from 'ol/source/Vector'
 import {defaults as defaultControls, Attribution} from 'ol/control'
+import {defaults as defaultInteractions} from 'ol/interaction'
 import GeoJSON from 'ol/format/GeoJSON'
 import {transform} from 'ol/proj'
 
@@ -70,6 +71,7 @@ function createMap(settings) {
     collapsible: false
   })
   const map = new Map({
+    interactions: defaultInteractions({pinchRotate: false}),
     controls: defaultControls({attribution: false, rotate: false}).extend([attribution]),
     layers: [createMapLayer(), createRadarLayer(), createLightningLayer(), createIconLayer(center)],
     target: 'map',
