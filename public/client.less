@@ -1,5 +1,6 @@
 @import (inline) "normalize-5.0.0.css";
 @import (inline) "ol-5.2.0.css";
+@import (inline) "rangeslider.css";
 
 html, body {
   font-family: "Roboto Condensed", Helvetica, Arial, sans-serif;
@@ -26,6 +27,12 @@ html, body {
 #loading-frame.loading {
   opacity: 1;
   z-index: 0;
+}
+
+#control, .rangeslider {
+  -webkit-touch-callout: none !important;
+  -webkit-text-size-adjust: none;
+  -webkit-user-select: none !important;
 }
 
 #control {
@@ -143,15 +150,24 @@ html, body {
   right: -320px;
 }
 
-#close-side-info {
+.button-style {
   cursor: pointer;
   outline: none;
+  background: transparent;
+  color: inherit;
+}
+
+#pwa-install {
+  margin-top: 1em;
+  padding: 8px;
+  border: 1px solid white;
+}
+
+#close-side-info {
   text-transform: uppercase;
   padding: 4px;
   font-size: 14px;
-  background: transparent;
   border: 0;
-  color: inherit;
   position: absolute;
   left: 13px;
   top: 13px;

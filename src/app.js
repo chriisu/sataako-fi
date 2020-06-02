@@ -1,4 +1,5 @@
 const compression = require('compression')
+const proxy = require('express-http-proxy')
 const express = require('express')
 const { imageFileForTimestamp, framesList } = require('./cache')
 
@@ -21,6 +22,8 @@ if (process.env.NODE_ENV == 'production') {
 }
 app.use(compression())
 app.use(express.static(`${__dirname}/../public`))
+
+app.use('/tiles', proxy('a.tile.openstreetmap.org'))
 
 app.get('/frame/:timestamp/:area', async (req, res) => {
   const { timestamp, area } = req.params
