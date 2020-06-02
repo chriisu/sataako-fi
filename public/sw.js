@@ -1,59 +1,83 @@
-const CACHE_NAME = 'V1'
+const CACHE_NAME = 'sade-cache-v5'
 
-/**
- * The install event is fired when the registration succeeds.
- * After the install step, the browser tries to activate the service worker.
- * Generally, we cache static resources that allow the website to run offline
- */
 this.addEventListener('install', async function () {
   const cache = await caches.open(CACHE_NAME)
   cache.addAll(['/index.html', '/client.css', '/client.js'])
 })
 
-/**
- * The fetch event is fired every time the browser sends a request.
- * In this case, the service worker acts as a proxy. We can for example return the cached
- * version of the ressource matching the request, or send the request to the internet
- * , we can even make our own response from scratch !
- * Here, we are going to use cache first strategy
- */
 self.addEventListener('fetch', (event) => {
-  //We defind the promise (the async code block) that return either the cached response or the network one
-  //It should return a response object
-  const getCustomResponsePromise = async () => {
+  const { request } = event
+  const getCustomResponsePromise = () => {
     try {
-      //Try to get the cached response
-      const cachedResponse =
-        event.request.cache === 'reload'
-          ? null
-          : await caches.match(event.request)
-      if (cachedResponse) {
-        //Return the cached response if present
-        console.log(`URL cached response ${event.request.url}`)
-        return cachedResponse
-      }
-
-      //Get the network response if no cached response is present
-      const netResponse = await fetch(event.request)
-      console.log(`adding net response to cache`)
-
-      //Here, we add the network response to the cache
-      let cache = await caches.open(CACHE_NAME)
-
-      //We must provide a clone of the response here
-      cache.put(event.request, netResponse.clone())
-
-      //return the network response
-      return netResponse
+      return cacheBlacklist(request)
+        ? fetchResponse({ request })
+        : cacheFirstResponse(request)
     } catch (err) {
       console.error(`Error ${err}`)
       throw err
     }
   }
 
-  //In order to override the default fetch behavior, we must provide the result of our custom behavoir to the
-  //event.respondWith method
-  if (event.request.method === 'GET' && event.request.url.startsWith('http')) {
+  if (request.method === 'GET' && request.url.startsWith('http')) {
     event.respondWith(getCustomResponsePromise())
   }
 })
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(pruneCaches())
+})
+
+async function fetchResponse({ request, cacheResponse = false }) {
+  const netResponse = await fetch(request)
+  if (cacheResponse) {
+    console.log(`adding response to cache: `, request.url)
+    const cache = await caches.open(CACHE_NAME)
+    cache.put(request, netResponse.clone())
+  }
+  return netResponse
+}
+
+async function cacheFirstResponse(request) {
+  const cachedResponse = await caches.match(request)
+  return cachedResponse
+    ? cachedResponse
+    : fetchResponse({ request, cacheResponse: true })
+}
+
+function cacheBlacklist(request) {
+  return (
+    request.cache === 'reload' ||
+    request.url.includes('google-analytics.com') ||
+    request.url.includes('googletagmanager.com')
+  )
+}
+
+async function pruneCaches() {
+  return Promise.all([
+    ...(await pruneOldRadarFrames()),
+    ...(await pruneOldCaches()),
+  ])
+}
+
+async function pruneOldCaches() {
+  const cacheNames = await caches.keys()
+  return cacheNames
+    .filter(
+      (cacheName) =>
+        CACHE_NAME !== cacheName && cacheName.startsWith('sade-cache')
+    )
+    .map((cacheName) => caches.delete(cacheName))
+}
+
+async function pruneOldRadarFrames() {
+  const cache = await caches.open(CACHE_NAME)
+  const cacheItems = await cache.keys()
+  return cacheItems
+    .filter(({ url }) => url.includes('/frame/'))
+    .filter(
+      ({ url }) =>
+        Date.now() - new Date(url.split('/frame/')[1].split('/')[0]).getTime() >
+        1000 * 60 * 60 * 4
+    )
+    .map((request) => cache.delete(request))
+}
