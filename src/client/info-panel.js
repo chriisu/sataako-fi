@@ -63,12 +63,12 @@ const InfoPanel = ({ loading, refresh }) => {
 
   const renderContent = () => {
     return (
-      <div>
+      <div className="sidepanel-content">
         <div className="logo-container">
           <img
-            src="/img/sataako-logo-white.png"
-            alt="Sataako kohta logo - sataako.fi"
-            title="Sataako kohta logo - sataako.fi"
+            src="/img/sade-logo.png"
+            alt="Sade logo"
+            title="Sade logo"
           />
         </div>
         <div className="description-container">

@@ -174,27 +174,29 @@ html, body {
   z-index: 1;
 }
 
+.sidepanel-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  box-sizing: border-box;
+  padding-top: 50px;
+}
+
 .logo-container {
-  min-height: 250px;
-  max-height: 30%;
-  position: relative;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   img {
     display: block;
-    position: absolute;
-    height: 125px;
-    width: 125px;
-    top: 50%;
-    left: 50%;
-    margin-top: -62.5px;
-    margin-left: -52px;
+    height: 180px;
+    width: 180px;
   }
 }
 
 .description-container {
-  position: absolute;
-  bottom: 0;
   padding: 20px;
-  font-size: 15px;
   h1 {
     text-transform: uppercase;
     font-weight: bold;
@@ -207,25 +209,13 @@ html, body {
   }
 }
 
-@media screen and (min-height: 800px) {
-  .logo-container {
-    min-height: 350px;
-    img {
-      height: 181px;
-      width: 150px;
-      margin-left: -75px;
-      margin-top: -90.5px;
-    }
-  }
-}
-
 @media screen and (max-height: 720px) {
   .logo-container {
-    display: none;
-  }
-  .description-container {
-    height: 90%;
-    overflow-y: scroll;
+    min-height: 100px;
+    img {
+      height: 80px;
+      width: 80px;
+    }
   }
 }
 
