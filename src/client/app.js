@@ -102,14 +102,13 @@ const SataakoApp = () => {
     ))
   }
 
-  async function reloadFramesList(options = {}) {
-    const { ignoreCache, segment = mapSegment } = options
+  async function reloadFramesList({ ignoreCache = false } = {}) {
     console.log('reloadFramesList')
     setLoading(true)
     const fetchConfig = ignoreCache ? { cache: 'reload' } : {}
     console.log('∞∞: reloadFramesList -> fetchConfig', fetchConfig)
     const response = await fetch(
-      `/frames-${segment >= 0 ? segment : 12}.json`,
+      `/frames-${mapSegment}.json`,
       fetchConfig
     )
     response.ok && setFrames(await response.json())
