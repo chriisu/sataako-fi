@@ -30,9 +30,6 @@ async function refreshCache() {
       const newImageUrls = radarImageUrls.filter(
         ({ url }) => !_.find(IMAGE_CACHE, { url })
       )
-      console.log(
-        `∞∞\nradarImageUrls: ${radarImageUrls.length} (new: ${newImageUrls.length})`
-      )
       await syncImages(newImageUrls)
       await pruneCache(CACHE_AGE)
       console.log('IMAGE_CACHE', IMAGE_CACHE.length)
@@ -63,7 +60,6 @@ async function syncImages(imageUrls) {
   for (const [index, { url, timestamp, area }] of imageUrls.entries()) {
     const fileName = `${timestamp}_${area}`
     try {
-      console.log(`Fetchin ${fileName}`)
       await fetchPostProcessedRadarFrame(
         url,
         path.join(CACHE_FOLDER, fileName)
@@ -76,12 +72,12 @@ async function syncImages(imageUrls) {
   }
 }
 
-async function pruneCache(expiringAgeMs = 60 * 60 * 1000) {
+async function pruneCache(expiringAgeMs = 60 * 60 * 1000 * 4) {
   const removed = _.remove(
     IMAGE_CACHE,
     (image) => Date.now() - new Date(image.timestamp).getTime() > expiringAgeMs
   )
-  removed.length > 0 && console.log('pruneCache removed items:', removed.length)
+  removed.length > 0 && console.log(`pruneCache removed items (${removed.length}):`, removed)
   for (const { timestamp } of removed) {
     await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}.png`))
     await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}.webp`))
