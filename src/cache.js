@@ -77,10 +77,10 @@ async function pruneCache(expiringAgeMs = 60 * 60 * 1000 * 4) {
     IMAGE_CACHE,
     (image) => Date.now() - new Date(image.timestamp).getTime() > expiringAgeMs
   )
-  removed.length > 0 && console.log(`pruneCache removed items (${removed.length}):`, removed)
-  for (const { timestamp } of removed) {
-    await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}.png`))
-    await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}.webp`))
+  removed.length > 0 && console.log(`pruneCache removed items: ${removed.length}`)
+  for (const { timestamp, area } of removed) {
+    await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}_${area}.png`))
+    await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}_${area}.webp`))
   }
 }
 
