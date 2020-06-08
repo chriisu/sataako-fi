@@ -7,23 +7,23 @@
     "test": "eslint src --fix"
   },
   "dependencies": {
-    "@babel/runtime": "^7.9.6",
-    "aws-sdk": "^2.680.0",
+    "@babel/runtime": "^7.10.2",
+    "aws-sdk": "^2.691.0",
     "axios": "0.19.2",
     "babel-runtime": "^6.26.0",
     "bluebird": "3.7.2",
     "compression": "1.7.4",
     "express": "4.17.1",
     "express-http-proxy": "^1.6.0",
-    "localforage": "^1.7.3",
+    "localforage": "^1.7.4",
     "lodash": "4.17.15",
     "react-rangeslider": "^2.2.0",
     "sharp": "0.24.0",
     "xml2js": "0.4.23"
   },
   "devDependencies": {
-    "@babel/core": "^7.9.6",
-    "@babel/plugin-transform-runtime": "^7.9.6",
+    "@babel/core": "^7.10.2",
+    "@babel/plugin-transform-runtime": "^7.10.1",
     "@babel/preset-env": "7.8.4",
     "@babel/preset-react": "7.8.3",
     "babel-eslint": "10.0.3",
