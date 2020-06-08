@@ -6,7 +6,7 @@ let deferredPrompt
 const InfoPanel = ({ loading, refresh }) => {
   const [collapsed, setCollapsed] = useState(true)
   const [pseudoLoad, setPseudoLoad] = useState(false)
-  const [pwaInstallVisible, setPwaButtonVisible] = useState(false)
+  const [pwaButtonVisible, setPwaButtonVisible] = useState(false)
 
   useEffect(() => {
     initPwaInstallPrompt()
@@ -36,10 +36,14 @@ const InfoPanel = ({ loading, refresh }) => {
 
   const openInfoPanel = () => (
     <div className="side-info-panel">
-      <button id="close-side-info" className='button-style' onClick={() => toggleCollapse(collapsed)}>
+      <button
+        id="close-side-info"
+        className="button-style"
+        onClick={() => toggleCollapse(collapsed)}
+      >
         Sulje
       </button>
-      {renderContent(pwaInstallVisible)}
+      {renderContent(pwaButtonVisible)}
     </div>
   )
 
@@ -65,11 +69,7 @@ const InfoPanel = ({ loading, refresh }) => {
     return (
       <div className="sidepanel-content">
         <div className="logo-container">
-          <img
-            src="/img/sade-logo.png"
-            alt="Sade logo"
-            title="Sade logo"
-          />
+          <img src="/img/sade-logo.png" alt="Sade logo" title="Sade logo" />
         </div>
         <div className="description-container">
           <h1>Sade</h1>
@@ -92,16 +92,15 @@ const InfoPanel = ({ loading, refresh }) => {
             >
               Heikki&nbsp;Poran
             </a>{' '}
-            käsialaa. Tämä sivusto on vielä kehitysvaiheessa mutta{' '}
+            käsialaa. Tämä sivusto on vielä keskeneräinen, mutta{' '}
             <a
-              href="http://helle.io/"
+              href="https://helle.io/"
               target="_blank"
               title="Christopher Helle"
             >
               Chris Helle
             </a>{' '}
-            pyrkii rakentamaan tästä miellyttävän työkalun sadetilanteen
-            seurantaan.
+             kehittelee tästä miellyttävän työkalun sadetilanteen seurantaan.
           </p>
           <p>
             Kartalla esitetään{' '}
@@ -120,13 +119,13 @@ const InfoPanel = ({ loading, refresh }) => {
               rel="noopener noreferrer"
               title="Helsinki Region Infoshare: Mitä on avoin data?"
             >
-              open dataa
+              avointa dataa
             </a>
             .
           </p>
           <p>
             <PwaInstall
-              visible={pwaInstallVisible}
+              visible={pwaButtonVisible}
               hidePwaInstall={hidePwaInstall}
               deferredPrompt={deferredPrompt}
             />
