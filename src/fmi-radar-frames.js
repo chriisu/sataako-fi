@@ -20,7 +20,7 @@ console.log(`Configured radar frames URL: ${fmiRadarFramesRequestUrl}`)
 async function fetchRadarImageUrls() {
   const {data} = await axios.get(fmiRadarFramesRequestUrl)
   const wfsResponse = await xmlToObject(data)
-  const frameReferences = await extractFrameReferences(wfsResponse)
+  const frameReferences = extractFrameReferences(wfsResponse)
   return frameReferences.flatMap(setProjectionAndCleanupUrl)
 }
 
@@ -39,7 +39,6 @@ function extractFrameReferences(featureQueryResult) {
 
 function setProjectionAndCleanupUrl(frameReference) {
   const radarUrl = url.parse(frameReference.url, true)
-  // console.log('∞∞: setProjectionAndCleanupUrl -> radarUrl', radarUrl)
   radarUrl.host = FMI.WMS_HOST
   radarUrl.query.format = 'image/png'
   radarUrl.query.width = FMI.WIDTH

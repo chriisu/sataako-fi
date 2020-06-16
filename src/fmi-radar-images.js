@@ -24,7 +24,7 @@ async function processImage(input, targetFilename) {
 
   const {width, height, channels} = info
   const pipeline = sharp(data, {
-    sequentialRead: true,
+    // sequentialRead: true,
     raw: { width, height, channels },
   })
     // .resize({height: height / 2, kernel: 'nearest'})
