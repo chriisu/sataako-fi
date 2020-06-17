@@ -1,6 +1,6 @@
 const axios = require('axios')
 const FMI = require('./fmi-constants')
-const {parseString} = require('xml2js')
+const { parseString } = require('xml2js')
 const processors = require('xml2js/lib/processors')
 const Promise = require('bluebird')
 const url = require('url')
@@ -13,7 +13,7 @@ const FEATURE_URL = url.parse(FMI.WFS_FEATURE_URL)
 FEATURE_URL.query = {
   request: 'getFeature',
   // eslint-disable-next-line camelcase
-  storedquery_id: 'fmi::observations::lightning::multipointcoverage'
+  storedquery_id: 'fmi::observations::lightning::multipointcoverage',
 }
 console.log(`Configured lightning URL stem: ${url.format(FEATURE_URL)}`)
 
@@ -39,14 +39,16 @@ function constructLightningsUrl(frameDates) {
   // Fetch lightnings before first frame
   const starttime = new Date(_.first(frameDates).getTime() - frameInterval)
   const endtime = _.last(frameDates)
-  const lightningsUrl = {...FEATURE_URL}
+  const lightningsUrl = { ...FEATURE_URL }
   lightningsUrl.query.starttime = starttime.toISOString()
   lightningsUrl.query.endtime = endtime.toISOString()
   return url.format(lightningsUrl)
 }
 
 function xmlToObject(xml) {
-  return parseXml(xml, {tagNameProcessors: [processors.stripPrefix, processors.firstCharLowerCase]})
+  return parseXml(xml, {
+    tagNameProcessors: [processors.stripPrefix, processors.firstCharLowerCase],
+  })
 }
 
 function extractLocationsAndTimes(queryResult) {
@@ -54,28 +56,28 @@ function extractLocationsAndTimes(queryResult) {
   if (!_.has(queryResult.featureCollection, 'member')) {
     return []
   }
-  return _(queryResult.featureCollection.member[0].gridSeriesObservation[0]
-    .result[0].multiPointCoverage[0].domainSet[0].simpleMultiPoint[0].positions[0]
+
+  const lightnings = queryResult.featureCollection.member[0].gridSeriesObservation[0].result[0].multiPointCoverage[0].domainSet[0].simpleMultiPoint[0].positions[0]
     .split('\n')
-    .map(_.trim))
-    .map(pos =>
-    ({
+    .map(_.trim)
+    .filter((lightningString) => lightningString.length > 0)
+    .map((pos) => ({
       // Pos is (lat, lon) - GeoJSON in client is (lon, lat)
       location: pos.split(' ').slice(0, 2).map(parseFloat).reverse(),
-      time: new Date(parseInt(pos.split(' ')[2], 10) * 1000)
+      time: new Date(parseInt(pos.split(' ')[2], 10) * 1000),
     }))
-    .uniqWith(_.isEqual)
-    .value()
+  return _.uniq(lightnings)
 }
 
 function snapLightningsToFrames(lightnings, frameDates) {
   return frameDates.map((frame) => ({
-      timestamp: frame.toISOString(),
-      locations: _.remove(lightnings, ({time}) => time < frame).map(({location}) => location)
-    })
-)
+    timestamp: frame.toISOString(),
+    locations: _.remove(lightnings, ({ time }) => time < frame).map(
+      ({ location }) => location
+    ),
+  }))
 }
 
 module.exports = {
-  fetchLightnings
+  fetchLightnings,
 }

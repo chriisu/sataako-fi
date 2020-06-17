@@ -19,8 +19,8 @@ const CACHE_AGE = 4 * 60 * 60 * 1000
 refreshCache()
 
 async function refreshCache() {
+  console.log('refreshCache: start')
   await refreshRadarCache()
-  await refreshLightningCache(getFrameTimestampsAsDates())
 
   setTimeout(refreshCache, REFRESH_ONE_MINUTE)
 
@@ -33,6 +33,10 @@ async function refreshCache() {
       await syncImages(newImageUrls)
       await pruneCache(CACHE_AGE)
       console.log('IMAGE_CACHE', IMAGE_CACHE.length)
+      if (newImageUrls.length > 0) {
+        await refreshLightningCache(getFrameTimestampsAsDates())
+      }
+      console.log('refreshCache: done.')
     } catch (err) {
       console.error(
         `Failed to fetch radar frames list from FMI API: ${err.message}`
@@ -48,6 +52,17 @@ async function refreshCache() {
         LIGHTNING_CACHE.push(lightning)
       }
       LIGHTNING_CACHE.splice(0, cacheSize)
+      console.log(
+        'LIGHTNING_CACHE length: ',
+        LIGHTNING_CACHE.length
+      )
+      console.log(
+        'LIGHTNING_CACHE cumulative length: ',
+        LIGHTNING_CACHE.reduce(
+          (acc, currentTime) => acc + currentTime.locations.length,
+          0
+        )
+      )
     } catch (err) {
       console.error(
         `Failed to fetch lightning list from FMI API: ${err.message}`
@@ -60,10 +75,7 @@ async function syncImages(imageUrls) {
   for (const [index, { url, timestamp, area }] of imageUrls.entries()) {
     const fileName = `${timestamp}_${area}`
     try {
-      await fetchPostProcessedRadarFrame(
-        url,
-        path.join(CACHE_FOLDER, fileName)
-      )
+      await fetchPostProcessedRadarFrame(url, path.join(CACHE_FOLDER, fileName))
       console.log('cache.push: ', fileName)
       IMAGE_CACHE.push({ timestamp, url, area })
     } catch (err) {
@@ -77,10 +89,16 @@ async function pruneCache(expiringAgeMs = 60 * 60 * 1000 * 4) {
     IMAGE_CACHE,
     (image) => Date.now() - new Date(image.timestamp).getTime() > expiringAgeMs
   )
-  removed.length > 0 && console.log(`pruneCache removed items: ${removed.length}`)
+  removed.length > 0 &&
+    console.log(`pruneCache removed items: ${removed.length}`)
+
   for (const { timestamp, area } of removed) {
-    await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}_${area}.png`))
-    await fs.promises.unlink(path.join(CACHE_FOLDER, `${timestamp}_${area}.webp`))
+    await fs.promises.unlink(
+      path.join(CACHE_FOLDER, `${timestamp}_${area}.png`)
+    )
+    await fs.promises.unlink(
+      path.join(CACHE_FOLDER, `${timestamp}_${area}.webp`)
+    )
   }
 }
 
@@ -98,12 +116,12 @@ function imageFileForTimestamp(timestamp, area) {
 
 function framesList(publicFramesRootUrl, segment = 12) {
   return _(IMAGE_CACHE)
-    .filter(frame => Number(frame.area) === Number(segment))
+    .filter((frame) => Number(frame.area) === Number(segment))
     .map(({ timestamp, area }) => ({
       image: publicFramesRootUrl + timestamp + '/' + area,
       lightnings: coordinatesForLightnings(timestamp),
       timestamp,
-      area
+      area,
     }))
     .sortBy(['timestamp'])
     .value()
@@ -113,6 +131,7 @@ function getFrameTimestampsAsDates() {
   return _(IMAGE_CACHE)
     .map('timestamp')
     .sort()
+    .uniq()
     .map((ts) => new Date(ts))
     .value()
 }

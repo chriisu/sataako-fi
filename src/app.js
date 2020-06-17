@@ -25,7 +25,7 @@ app.use(express.static(`${__dirname}/../public`))
 
 app.use('/tiles', proxy('a.tile.openstreetmap.org'))
 
-app.get('/frame/:timestamp/:area', async (req, res) => {
+app.get('/frame/:timestamp/:area', (req, res) => {
   const { timestamp, area } = req.params
   const image = imageFileForTimestamp(timestamp, Number(area))
   if (image) {
