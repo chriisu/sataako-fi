@@ -85,9 +85,16 @@ function createMap(settings) {
 }
 
 function createMapLayer() {
-  const attributions = ['&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>']
+  const attributions = [
+    '<a href="https://www.mapbox.com/about/maps/" target="_blank">&copy; Mapbox</a>',
+    '<a href="http://www.openstreetmap.org/about/" target="_blank">&copy; OpenStreetMap</a>',
+    '<a href="https://apps.mapbox.com/feedback/?owner=chriisu&id=ckbrowk230cws1imri0q5qma2#/24.243/60.695/8.03">Improve this map</a>',
+  ]
+
   const source = new XYZ({
-    url: '/tiles/{z}/{x}/{y}.png',
+    url: '/tiles/{z}/{x}/{y}',
+    tilePixelRatio: 2,
+    tileSize: [512, 512],
     attributions,
   })
   return new Tile({source})

@@ -5,6 +5,7 @@ const { imageFileForTimestamp, framesList } = require('./cache')
 
 const PORT = process.env.PORT || 3000
 const PUBLIC_URL_PORT = process.env.NODE_ENV === 'production' ? '' : `:${PORT}`
+const MAPBOX_ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN || ''
 
 const app = express()
 app.disable('x-powered-by')
@@ -23,7 +24,16 @@ if (process.env.NODE_ENV == 'production') {
 app.use(compression())
 app.use(express.static(`${__dirname}/../public`))
 
-app.use('/tiles', proxy('a.tile.openstreetmap.org'))
+app.use(
+  '/tiles',
+  proxy('api.mapbox.com', {
+    proxyReqPathResolver: (req) => {
+      const parts = req.url.split('/')
+      const path = `/styles/v1/chriisu/ckbrowk230cws1imri0q5qma2/tiles/256/${parts[1]}/${parts[2]}/${parts[3]}@2x?access_token=${MAPBOX_ACCESS_TOKEN}`
+      return path
+    },
+  })
+)
 
 app.get('/frame/:timestamp/:area', (req, res) => {
   const { timestamp, area } = req.params
