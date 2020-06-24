@@ -31,7 +31,7 @@ app.use(
   proxy('https://api.mapbox.com', {
     proxyReqPathResolver: (req) => {
       const parts = req.url.split('/')
-      const path = `/styles/v1/chriisu/ckbrowk230cws1imri0q5qma2/tiles/256/${parts[1]}/${parts[2]}/${parts[3]}@2x?access_token=${MAPBOX_ACCESS_TOKEN}`
+      const path = `/styles/v1/chriisu/ckbrowk230cws1imri0q5qma2/tiles/512/${parts[1]}/${parts[2]}/${parts[3]}@2x?access_token=${MAPBOX_ACCESS_TOKEN}`
       return path
     },
   })
