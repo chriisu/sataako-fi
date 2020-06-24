@@ -1,6 +1,7 @@
 const compression = require('compression')
 const proxy = require('express-http-proxy')
 const express = require('express')
+const cors = require('cors')
 const { imageFileForTimestamp, framesList } = require('./cache')
 
 const PORT = process.env.PORT || 3000
@@ -26,7 +27,8 @@ app.use(express.static(`${__dirname}/../public`))
 
 app.use(
   '/tiles',
-  proxy('api.mapbox.com', {
+  cors({ origin: 'https://api.mapbox.com' }),
+  proxy('https://api.mapbox.com', {
     proxyReqPathResolver: (req) => {
       const parts = req.url.split('/')
       const path = `/styles/v1/chriisu/ckbrowk230cws1imri0q5qma2/tiles/256/${parts[1]}/${parts[2]}/${parts[3]}@2x?access_token=${MAPBOX_ACCESS_TOKEN}`
