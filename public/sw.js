@@ -1,14 +1,17 @@
-const CACHE_NAME = 'sade-cache-v6'
+const CACHE_NAME = 'sade-cache-v7'
 
-this.addEventListener('install', async function () {
-  self.skipWaiting()
-  const cache = await caches.open(CACHE_NAME)
-  cache.addAll(['/index.html', '/client.css', '/client.js'])
+self.skipWaiting()
+
+this.addEventListener('install', (event) => {
+  const preCache = async () => {
+    const cache = await caches.open(CACHE_NAME)
+    cache.addAll(['/index.html', '/client.css', '/client.js'])
+  }
+  event.waitUntil(preCache())
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(pruneCaches())
-  event.waitUntil(clients.claim())
+  event.waitUntil(Promise.all([pruneCaches(), clients.claim()]))
 })
 
 self.addEventListener('fetch', (event) => {
