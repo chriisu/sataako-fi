@@ -31,6 +31,9 @@ const SataakoApp = () => {
   }, [])
 
   useEffect(() => {
+    if (pruneLoadedFrames() > 0) {
+      return
+    }
     if (frames.length && !mapLoading) {
       !activeFrame.frame &&
         console.log('activeFrame.frame null', activeFrame.frame)
@@ -53,7 +56,7 @@ const SataakoApp = () => {
 
   useEffect(() => {
     console.log(`useEffect mapSegment ${mapSegment}`)
-    if (!loading || activeFrame.segment !== mapSegment) {
+    if (activeFrame.segment !== mapSegment) {
       reloadFramesList({ ignoreCache: true })
     }
   }, [mapSegment])
@@ -62,10 +65,9 @@ const SataakoApp = () => {
     const prunedLoadedFrames = loadedFrames.filter((loadedFrame) =>
       frames.find((frame) => frame.image === loadedFrame)
     )
-    prunedLoadedFrames.length !== loadedFrames.length &&
-      console.log('∞∞: prunedLoadedFrames', prunedLoadedFrames)
-    prunedLoadedFrames.length !== loadedFrames.length &&
-      setLoadedFrames(prunedLoadedFrames)
+    const diff = loadedFrames.length - prunedLoadedFrames.length
+    diff > 0 && setLoadedFrames(prunedLoadedFrames)
+    return diff
   }
 
   async function initMap() {
@@ -89,15 +91,13 @@ const SataakoApp = () => {
   function renderFrameImages() {
     const handleLoad = (frame) =>
       setLoadedFrames([...loadedFrames, frame.image])
-    const handleError = (frame) =>
-      console.log('!!!!FrameError!!!!', frame.image)
 
     return frames.map((frame) => (
       <img
         key={frame.image}
         src={frame.image}
         onLoad={() => handleLoad(frame)}
-        onError={() => handleError(frame)}
+        onError={() => loadingError(`FrameLoadingError. ${frame.image}`)}
       />
     ))
   }
@@ -107,11 +107,15 @@ const SataakoApp = () => {
     setLoading(true)
     const fetchConfig = ignoreCache ? { cache: 'reload' } : {}
     console.log('∞∞: reloadFramesList -> fetchConfig', fetchConfig)
-    const response = await fetch(
-      `/frames-${mapSegment}.json`,
-      fetchConfig
-    )
-    response.ok && setFrames(await response.json())
+    const response = await fetch(`/frames-${mapSegment}.json`, fetchConfig)
+    response.ok
+      ? setFrames(await response.json())
+      : loadingError('FramesList weird response')
+  }
+
+  function loadingError(msg) {
+    setLoading(false)
+    console.error(`Something went wrong when loading stuff (${msg})`)
   }
 
   function onMapMove() {
@@ -122,11 +126,7 @@ const SataakoApp = () => {
     } catch (err) {
       console.log(err)
     }
-    const currentSegment = determineMapSegment([x, y], zoom)
-    updateMapSegment(currentSegment)
-  }
-
-  const updateMapSegment = (newSegment) => {
+    const newSegment = determineMapSegment([x, y], zoom)
     setMapSegment(newSegment)
   }
 
@@ -150,7 +150,9 @@ const SataakoApp = () => {
       (frame) => frames[index] && frames[index].image === frame
     )
     if (
-      (index !== activeFrame.index || segment !== activeFrame.segment) &&
+      (index !== activeFrame.index ||
+        segment !== activeFrame.segment ||
+        activeFrame.frame === null) &&
       (!waitLoading || frameIsLoaded)
     ) {
       const frame = frames[index]
