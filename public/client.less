@@ -9,8 +9,8 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.ol-control button {
-  background-color: #62C5D9 !important;
+.ol-control.ol-zoom button {
+  background-color: #62C5D9;
 }
 
 #loading-frame {
@@ -108,7 +108,14 @@ html, body {
   .ol-attribution {
     font-size: .8rem;
     letter-spacing: -.25px;
-    opacity: 80%;
+    background-color: #fff;
+    border-radius: 4px 12px 12px 4px;
+
+    &.ol-collapsed {
+      opacity: 60%;
+      border-radius: 50%;
+      background-color: rgba(255,255,255,0.5);
+    }
 
     a, a:visited {
       color: #1f3349;
@@ -117,6 +124,27 @@ html, body {
 
     a:hover {
       text-decoration: underline;
+    }
+
+    a.bold {
+      letter-spacing: -.1px;
+      font-weight: 700;
+    }
+
+    ul {
+      padding-left: 2px;
+    }
+
+    button {
+      background-color: #000;
+      border-radius: 50%;
+      height: 18px;
+      width: 18px;
+      font-size: 16px;
+      font-family: "Optima", sans-serif;
+      &:focus {
+        outline: none;
+      }
     }
   }
 

@@ -68,11 +68,11 @@ function createMap(settings) {
   })
 
   const attribution = new Attribution({
-    collapsible: false
+    collapseLabel: 'i'
   })
   const map = new Map({
     interactions: defaultInteractions({pinchRotate: false}),
-    controls: defaultControls({attribution: false, rotate: false}).extend([attribution]),
+    controls: defaultControls({ rotate: false}).extend([attribution]),
     layers: [createMapLayer(), createRadarLayer(), createLightningLayer(), createIconLayer(center)],
     target: 'map',
     view
@@ -88,7 +88,7 @@ function createMapLayer() {
   const attributions = [
     '<a href="https://www.mapbox.com/about/maps/" target="_blank">&copy; Mapbox</a>',
     '<a href="http://www.openstreetmap.org/about/" target="_blank">&copy; OpenStreetMap</a>',
-    '<a href="https://apps.mapbox.com/feedback/?owner=chriisu&id=ckbrowk230cws1imri0q5qma2#/24.243/60.695/8.03">Improve this map</a>',
+    '<a class="bold" href="https://apps.mapbox.com/feedback/?owner=chriisu&id=ckbrowk230cws1imri0q5qma2#/24.243/60.695/8.03">Improve this map</a>',
   ]
 
   const source = new XYZ({
