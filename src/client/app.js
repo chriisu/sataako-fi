@@ -35,13 +35,13 @@ const SataakoApp = () => {
       return
     }
     if (frames.length && !mapLoading) {
-      !activeFrame.frame &&
-        console.log('activeFrame.frame null', activeFrame.frame)
       activeFrame.frame
         ? setFrameVisible({ segment: mapSegment, waitLoading: true })
         : setFrameVisible({ index: frames.length - 1 })
       if (loadedFrames.length === frames.length) {
         setLoading(false)
+        !loadedFrames.includes(activeFrame.frame?.image) &&
+          setFrameVisible({ index: frames.length - 1 })
       }
     }
   }, [frames, mapLoading, loadedFrames])
@@ -55,7 +55,6 @@ const SataakoApp = () => {
   }, [frames])
 
   useEffect(() => {
-    console.log(`useEffect mapSegment ${mapSegment}`)
     if (activeFrame.segment !== mapSegment) {
       reloadFramesList({ ignoreCache: true })
     }
@@ -103,10 +102,8 @@ const SataakoApp = () => {
   }
 
   async function reloadFramesList({ ignoreCache = false } = {}) {
-    console.log('reloadFramesList')
     setLoading(true)
     const fetchConfig = ignoreCache ? { cache: 'reload' } : {}
-    console.log('∞∞: reloadFramesList -> fetchConfig', fetchConfig)
     const response = await fetch(`/frames-${mapSegment}.json`, fetchConfig)
     response.ok
       ? setFrames(await response.json())
