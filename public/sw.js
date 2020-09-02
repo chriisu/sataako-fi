@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sade-cache-v11'
+const CACHE_NAME = 'sade-cache-v12'
 
 self.skipWaiting()
 
