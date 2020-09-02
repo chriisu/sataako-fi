@@ -78,7 +78,6 @@ const InfoPanel = ({ loading, refresh }) => {
             <a
               href="https://sataako.fi/"
               target="_blank"
-              rel="noopener noreferrer"
               title="Sataako kohta? - Sataako.fi"
             >
               Sataako.fi
@@ -92,15 +91,16 @@ const InfoPanel = ({ loading, refresh }) => {
             >
               Heikki&nbsp;Poran
             </a>{' '}
-            käsialaa. Tämä sivusto on vielä keskeneräinen, mutta{' '}
+            käsialaa.{' '}
             <a
               href="https://helle.io/"
               target="_blank"
               title="Christopher Helle"
             >
-              Chris Helle
+              Christopher Helle
             </a>{' '}
-             kehittelee tästä miellyttävän työkalun sadetilanteen seurantaan.
+            rakensi tämän palvelun jotta tarkkojen sadetutkakuvien kautta voi
+            seurata sateen kehittymistä ympäri Suomea.
           </p>
           <p>
             Kartalla esitetään{' '}
