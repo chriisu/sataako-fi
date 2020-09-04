@@ -124,7 +124,7 @@ const SataakoApp = () => {
       console.log(err)
     }
     const newSegment = determineMapSegment([x, y], zoom)
-    setMapSegment(newSegment)
+    newSegment >= 0 && setMapSegment(newSegment)
   }
 
   function onLocation(geolocationResponse) {
